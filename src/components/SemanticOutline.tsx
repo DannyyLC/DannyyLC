@@ -7,7 +7,6 @@ import {
   IDENTITY,
   PROJECTS,
   SKILL_GRAPH,
-  TERRITORY,
   THESIS,
 } from "@/lib/content";
 
@@ -87,13 +86,9 @@ export default function SemanticOutline() {
         <a href={COMPANY.url}>{COMPANY.domain}</a>
       </p>
 
-      <h2>
-        {TERRITORY.city}, {TERRITORY.country}
-      </h2>
-      <p>{TERRITORY.body}</p>
-
       <h2>Contact</h2>
       <p>{CONTACT.body}</p>
+      <p>{CONTACT.location}</p>
       <ul>
         {CONTACT.links.map((link) => (
           <li key={link.label}>

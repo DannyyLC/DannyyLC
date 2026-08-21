@@ -4,16 +4,20 @@ import { COMPANY, IDENTITY } from "@/lib/content";
 /**
  * La compañía.
  *
- * El único nivel donde aparece una cara. Va aquí y no en el hero a propósito:
- * abrir con un retrato convierte el sitio en un perfil, y este sitio es un
- * recorrido por sistemas que resulta que tienen un autor. Se llega a la persona
- * después de ver lo que construyó.
+ * Aquí va la marca, no la cara: el retrato se mudó a `about`, donde llega en la
+ * segunda pantalla en vez de en la quinta. Este nivel trata de Fractal, así que
+ * lo que corresponde en la columna es su logotipo.
+ *
+ * El logo va en SVG y no en PNG por el zoom: este nivel cruza la pantalla a
+ * escala 6 antes de asentarse en 1, y un mapa de bits a seis aumentos se
+ * deshace. Además sus trazos ya son blancos, así que encaja en el
+ * monocromático sin tocarlo.
  */
 export default function L5Company() {
   return (
     <LevelShell>
       <div className="grid gap-8 sm:grid-cols-[13rem_1fr] sm:gap-10">
-        <PortraitSlot />
+        <CompanyMark />
 
         <div>
           {/* Su papel encabeza, no el nombre de la empresa. Al revés el nivel
@@ -54,26 +58,30 @@ export default function L5Company() {
 }
 
 /**
- * Hueco del retrato.
+ * Marca de la compañía.
  *
- * Placeholder a propósito y no una silueta genérica: cuando llegue la foto real
- * entra aquí en duotono a negro puro y el encuadre no se mueve ni un pixel.
- * Sustituir por <Image /> con `grayscale contrast-125` y este mismo aspecto.
+ * El recuadro es cuadrado, no 3:4 como el del retrato. Una caja vertical con un
+ * logotipo cuadrado dentro deja franjas muertas arriba y abajo por geometría, y
+ * el logo se ve pequeño por más que se agrande: el problema no era su tamaño
+ * sino la forma del hueco. Igualada la proporción, el logo ocupa el 88% del
+ * ancho y el aire que queda es margen deliberado, no sobra.
+ *
+ * El relleno no baja de 12px: por debajo de eso el logo empieza a tocar las
+ * marcas de encuadre de las esquinas y el recuadro deja de leerse como un
+ * marco para parecer un borde recortado.
  */
-function PortraitSlot() {
+function CompanyMark() {
   return (
-    <div className="relative aspect-3/4 w-full max-w-52 border border-white/12">
-      <div className="star-dust twinkle absolute inset-0" />
+    <div className="relative flex aspect-square w-full max-w-52 items-center justify-center border border-white/12 p-3">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logos/fractal.svg"
+        alt="Fractal"
+        className="w-full"
+        width={1024}
+        height={1024}
+      />
 
-      <div className="absolute inset-0 flex items-end p-3">
-        <p className="font-mono text-[0.55rem] leading-relaxed tracking-[0.15em] text-ash-400 uppercase">
-          portrait
-          <br />
-          pending
-        </p>
-      </div>
-
-      {/* Marcas de encuadre, como visor de cámara */}
       <span className="absolute top-2 left-2 h-2 w-2 border-t border-l border-white/40" />
       <span className="absolute right-2 bottom-2 h-2 w-2 border-r border-b border-white/40" />
     </div>

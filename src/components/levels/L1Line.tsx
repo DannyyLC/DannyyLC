@@ -1,4 +1,5 @@
 import LevelShell from "./LevelShell";
+import PortraitSlot from "@/components/ui/PortraitSlot";
 import { BIO } from "@/lib/content";
 
 /**
@@ -6,6 +7,10 @@ import { BIO } from "@/lib/content";
  *
  * Un paso atrás desde el caret: ahora se ve la línea completa que estaba
  * escribiendo, y alrededor de ella, quién la escribe.
+ *
+ * El retrato entra aquí, en la segunda pantalla. Estaba en el nivel de la
+ * compañía —quinto de siete— y llegar a la cara del autor tan tarde es
+ * demasiado para una página que trata sobre él.
  */
 export default function L1Line() {
   return (
@@ -18,15 +23,19 @@ export default function L1Line() {
         <span className="text-ash-400">)</span>
       </p>
 
-      <div className="mt-10 space-y-5 border-l border-white/12 pl-6">
-        {BIO.map((line) => (
-          <p
-            key={line.slice(0, 24)}
-            className="max-w-xl text-sm leading-relaxed text-ash-200 sm:text-base"
-          >
-            {line}
-          </p>
-        ))}
+      <div className="mt-10 grid gap-8 sm:grid-cols-[13rem_1fr] sm:gap-10">
+        <PortraitSlot />
+
+        <div className="space-y-5 border-l border-white/12 pl-6">
+          {BIO.map((line) => (
+            <p
+              key={line.slice(0, 24)}
+              className="text-sm leading-relaxed text-ash-200"
+            >
+              {line}
+            </p>
+          ))}
+        </div>
       </div>
     </LevelShell>
   );

@@ -9,7 +9,7 @@ import { CONTACT } from "@/lib/content";
  * círculo en vez de con un formulario— es lo que convierte el recorrido en una
  * historia y no en una lista de secciones.
  */
-export default function L7Contact() {
+export default function L6Contact() {
   return (
     <LevelShell frame={false} centered>
       <div className="flex flex-col items-center text-center">
@@ -21,6 +21,12 @@ export default function L7Contact() {
 
         <p className="mt-4 max-w-md text-sm leading-relaxed text-ash-200">
           {CONTACT.body}
+        </p>
+
+        {/* La ubicación aterriza aquí y no en un nivel propio: quien va a
+            escribir necesita la zona horaria, no una pantalla sobre el tema. */}
+        <p className="mt-5 font-mono text-[0.6rem] tracking-[0.2em] text-ash-400 uppercase">
+          {CONTACT.location}
         </p>
 
         <ul className="mt-10 grid gap-px bg-white/10 sm:grid-cols-4">

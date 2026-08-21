@@ -107,19 +107,7 @@ function ProjectCard({
       className="flex shrink-0 flex-col border border-white/12 p-6 transition-colors duration-500 hover:border-white/30"
       style={{ width: "max(18rem, 28vw)" }}
     >
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="font-mono text-base text-white">{project.name}</h3>
-        {project.href && (
-          <a
-            href={project.href}
-            target="_blank"
-            rel="noreferrer"
-            className="font-mono text-[0.6rem] text-ash-300 transition-colors hover:text-white"
-          >
-            ↗
-          </a>
-        )}
-      </div>
+      <h3 className="font-mono text-base text-white">{project.name}</h3>
 
       <p className="mt-1 font-mono text-[0.6rem] tracking-[0.18em] text-ash-300 uppercase">
         {project.what}
@@ -144,6 +132,23 @@ function ProjectCard({
       <p className="mt-6 font-mono text-[0.6rem] leading-relaxed text-ash-400">
         {project.stack.join(" · ")}
       </p>
+
+      {/* El enlace muestra el dominio, no una flecha suelta.
+          Una ↗ de nueve pixeles en una esquina no se lee como "esto está en
+          línea, entra"; el dominio sí, y de paso dice a dónde va antes de
+          hacer clic. Solo lo llevan los proyectos desplegados y públicos. */}
+      {project.href && (
+        <a
+          href={project.href}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 flex items-center gap-2 border-t border-white/10 pt-4 font-mono text-[0.65rem] text-ash-200 transition-colors hover:text-white"
+        >
+          <span className="h-1 w-1 rotate-45 bg-white/60" aria-hidden />
+          <span className="truncate">{new URL(project.href).host}</span>
+          <span aria-hidden>↗</span>
+        </a>
+      )}
     </article>
   );
 }

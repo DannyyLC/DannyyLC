@@ -141,7 +141,7 @@ export const PROJECTS: readonly Project[] = [
     detail:
       "A platform for building and running AI agents in production. I designed it and took it from an empty repository to a paying deployment.",
     stack: ["Next.js", "NestJS", "TypeScript", "PostgreSQL", "Docker"],
-    href: "https://fractalops.com.mx",
+    href: "https://app.tesseract.fractalops.com.mx",
   },
   {
     name: "Agent-based RAG",
@@ -264,20 +264,22 @@ export const COMPANY = {
   ],
 } as const;
 
-/** Nivel 10⁷ — el territorio. */
-export const TERRITORY = {
-  city: "Aguascalientes",
-  country: "México",
-  /** Coordenadas reales de la ciudad; el nivel las dibuja como mira. */
-  lat: 21.8853,
-  lon: -102.2916,
-  body: "All of it is built from a city of two million people in central México — for clients here, and for anyone who scrolled this far.",
-} as const;
-
-/** Nivel 10⁸ — el punto. */
+/**
+ * El punto — cierre y contacto.
+ *
+ * Antes había un nivel de "territorio" entre la compañía y este: una mira sobre
+ * las coordenadas de Aguascalientes. Era el único nivel que no decía nada
+ * profesional —respondía "¿dónde vives?", que es un dato de una línea y no de
+ * una pantalla— y de paso amortiguaba el momento más dramático del zoom. Sin
+ * él el cierre va de la compañía directo al punto, sin escalas.
+ *
+ * La ubicación no se perdió: vive aquí, que es donde alguien que va a
+ * escribirte necesita saber tu zona horaria.
+ */
 export const CONTACT = {
   headline: "Back to a point of light.",
   body: "If you have something that needs to hold state, route across models, and stay up — write to me.",
+  location: IDENTITY.location,
   links: [
     { label: "Email", value: IDENTITY.email, href: `mailto:${IDENTITY.email}` },
     { label: "GitHub", value: IDENTITY.githubHandle, href: IDENTITY.github },

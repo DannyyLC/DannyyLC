@@ -8,16 +8,19 @@ import L2Skills from "@/components/levels/L2Skills";
 import L3Projects from "@/components/levels/L3Projects";
 import L4Experience from "@/components/levels/L4Experience";
 import L5Company from "@/components/levels/L5Company";
-import L6Territory from "@/components/levels/L6Territory";
-import L7Contact from "@/components/levels/L7Contact";
+import L6Contact from "@/components/levels/L6Contact";
 
 /**
- * Los ocho niveles del zoom, del más pequeño al más grande.
+ * Los siete niveles del zoom, del más pequeño al más grande.
  *
  * El orden es la historia: un caret → una línea → un stack → lo que construyó →
- * para quién lo hizo → la compañía que dirige → el lugar donde ocurre → un
- * punto. Reordenarlos rompe la premisa, porque cada nivel tiene que ser
- * plausiblemente el contexto del anterior.
+ * para quién lo hizo → la compañía que dirige → un punto. Reordenarlos rompe la
+ * premisa, porque cada nivel tiene que ser plausiblemente el contexto del
+ * anterior.
+ *
+ * Hubo un nivel de "territorio" entre la compañía y el cierre. Era el único que
+ * no decía nada profesional —contestaba "¿dónde vives?"— y amortiguaba el
+ * alejamiento final. La ubicación se mudó a contacto, en una línea.
  *
  * Antes eran diez. La arquitectura interna de Tesseract tenía nivel propio —y
  * es privada, no va en una página pública—, además de que el producto volvía a
@@ -40,8 +43,7 @@ const LEVELS: Level[] = [
   { exp: 2, name: "projects", dwell: 1.5, Component: L3Projects },
   { exp: 3, name: "experience", Component: L4Experience },
   { exp: 4, name: "company", Component: L5Company },
-  { exp: 5, name: "territory", Component: L6Territory },
-  { exp: 6, name: "contact", Component: L7Contact },
+  { exp: 5, name: "contact", Component: L6Contact },
 ];
 
 export default function ZoomRoot() {
