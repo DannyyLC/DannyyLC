@@ -2,14 +2,14 @@ import LevelShell from "./LevelShell";
 import { CONTACT } from "@/lib/content";
 
 /**
- * 10⁸ — el punto.
+ * El punto.
  *
  * El zoom cierra donde abrió: en un punto de luz sobre negro. El caret del
  * primer nivel era esto mismo visto de cerca, y decirlo así —cerrando el
  * círculo en vez de con un formulario— es lo que convierte el recorrido en una
  * historia y no en una lista de secciones.
  */
-export default function L9Contact() {
+export default function L7Contact() {
   return (
     <LevelShell frame={false} centered>
       <div className="flex flex-col items-center text-center">

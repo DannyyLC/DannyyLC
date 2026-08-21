@@ -3,14 +3,12 @@ import {
   COMPANY,
   CONTACT,
   DOMAINS,
+  EXPERIENCE,
   IDENTITY,
-  PRODUCTS,
-  RESEARCH,
+  PROJECTS,
   SKILL_GRAPH,
-  SYSTEM,
   TERRITORY,
   THESIS,
-  WORK,
 } from "@/lib/content";
 
 /**
@@ -24,6 +22,10 @@ import {
  * Esto no es un resumen ni una versión reducida: es el mismo contenido, en
  * orden, con jerarquía real de encabezados. Se construye desde `content.ts`, no
  * desde los componentes, para no montar dos veces las animaciones de GSAP.
+ *
+ * También es donde viven las tecnologías que el carrusel no dibuja por no tener
+ * logo. Aquí sí aparecen, que es lo que importa para búsqueda y para los
+ * filtros automáticos de reclutamiento.
  */
 export default function SemanticOutline() {
   return (
@@ -46,53 +48,29 @@ export default function SemanticOutline() {
         </p>
       ))}
 
-      <h2>{SYSTEM.name}</h2>
-      <p>{SYSTEM.tagline}</p>
-      {SYSTEM.nodes.map((n) => (
-        <p key={n.id}>
-          {n.label} — {n.stack}. {n.note}
-        </p>
-      ))}
-      {SYSTEM.mechanics.map((m) => (
-        <p key={m.title}>
-          <strong>{m.title}:</strong> {m.body}
-        </p>
-      ))}
-
-      <h2>Products</h2>
-      {PRODUCTS.map((p) => (
+      <h2>Projects</h2>
+      {PROJECTS.map((p) => (
         <section key={p.name}>
           <h3>
             {p.name} — {p.what}
           </h3>
+          <p>{p.client}</p>
           <p>{p.role}</p>
           <p>{p.detail}</p>
           <p>{p.stack.join(", ")}</p>
         </section>
       ))}
 
-      <h2>Work</h2>
-      {WORK.map((w) => (
-        <section key={w.client}>
+      <h2>Experience</h2>
+      {EXPERIENCE.map((role) => (
+        <section key={role.org}>
           <h3>
-            {w.client} — {w.role}
+            {role.title} — {role.org}
           </h3>
-          <p>{w.period}</p>
-          <p>{w.detail}</p>
-          <p>{w.stack.join(", ")}</p>
+          <p>{role.period}</p>
+          <p>{role.detail}</p>
+          <p>{role.stack.join(", ")}</p>
         </section>
-      ))}
-
-      <h2>{RESEARCH.title}</h2>
-      <p>
-        {RESEARCH.institution} · {RESEARCH.projectId} · {RESEARCH.period}
-      </p>
-      <p>{RESEARCH.body}</p>
-      {RESEARCH.metrics.map((m) => (
-        <p key={m.label}>
-          {m.value}
-          {m.unit} {m.label}
-        </p>
       ))}
 
       <h2>

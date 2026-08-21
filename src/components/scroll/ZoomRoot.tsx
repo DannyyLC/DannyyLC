@@ -5,21 +5,26 @@ import ZoomStage, { type Level } from "./ZoomStage";
 import L0Cursor from "@/components/levels/L0Cursor";
 import L1Line from "@/components/levels/L1Line";
 import L2Skills from "@/components/levels/L2Skills";
-import L3System from "@/components/levels/L3System";
-import L4Products from "@/components/levels/L4Products";
-import L5Work from "@/components/levels/L5Work";
-import L6Research from "@/components/levels/L6Research";
-import L7Company from "@/components/levels/L7Company";
-import L8Territory from "@/components/levels/L8Territory";
-import L9Contact from "@/components/levels/L9Contact";
+import L3Projects from "@/components/levels/L3Projects";
+import L4Experience from "@/components/levels/L4Experience";
+import L5Company from "@/components/levels/L5Company";
+import L6Territory from "@/components/levels/L6Territory";
+import L7Contact from "@/components/levels/L7Contact";
 
 /**
- * Los diez niveles del zoom, del más pequeño al más grande.
+ * Los ocho niveles del zoom, del más pequeño al más grande.
  *
- * El orden es la historia: un caret → una línea → una función → un sistema →
- * un producto → clientes → investigación → una compañía → un territorio → un
+ * El orden es la historia: un caret → una línea → un stack → lo que construyó →
+ * para quién lo hizo → la compañía que dirige → el lugar donde ocurre → un
  * punto. Reordenarlos rompe la premisa, porque cada nivel tiene que ser
  * plausiblemente el contexto del anterior.
+ *
+ * Antes eran diez. La arquitectura interna de Tesseract tenía nivel propio —y
+ * es privada, no va en una página pública—, además de que el producto volvía a
+ * salir un nivel después; y la investigación de la UAA también tenía el suyo,
+ * cuando es un empleo y su resultado pertenece a la fila de ese empleo. Cuatro
+ * niveles se volvieron dos: uno responde "qué construiste" y el otro "quién te
+ * contrató y cuándo".
  *
  * El registro vive en un módulo de cliente y no en `page.tsx` porque una
  * referencia a componente es una función, y las funciones no cruzan la frontera
@@ -29,14 +34,14 @@ import L9Contact from "@/components/levels/L9Contact";
 const LEVELS: Level[] = [
   { exp: -1, name: "the cursor", Component: L0Cursor },
   { exp: 0, name: "the line", Component: L1Line },
-  { exp: 1, name: "the function", Component: L2Skills },
-  { exp: 2, name: "the system", Component: L3System },
-  { exp: 3, name: "the product", Component: L4Products },
-  { exp: 4, name: "the work", Component: L5Work },
-  { exp: 5, name: "the research", Component: L6Research },
-  { exp: 6, name: "the company", Component: L7Company },
-  { exp: 7, name: "the territory", Component: L8Territory },
-  { exp: 8, name: "the point", Component: L9Contact },
+  { exp: 1, name: "the stack", Component: L2Skills },
+  // El único nivel con estancia: el zoom se detiene y ese tramo se gasta
+  // cruzando la pista de proyectos en horizontal.
+  { exp: 2, name: "the projects", dwell: 1.5, Component: L3Projects },
+  { exp: 3, name: "the experience", Component: L4Experience },
+  { exp: 4, name: "the company", Component: L5Company },
+  { exp: 5, name: "the territory", Component: L6Territory },
+  { exp: 6, name: "the point", Component: L7Contact },
 ];
 
 export default function ZoomRoot() {

@@ -2,14 +2,14 @@ import LevelShell from "./LevelShell";
 import { COMPANY, IDENTITY } from "@/lib/content";
 
 /**
- * 10⁶ — la compañía.
+ * La compañía.
  *
  * El único nivel donde aparece una cara. Va aquí y no en el hero a propósito:
  * abrir con un retrato convierte el sitio en un perfil, y este sitio es un
  * recorrido por sistemas que resulta que tienen un autor. Se llega a la persona
  * después de ver lo que construyó.
  */
-export default function L7Company() {
+export default function L5Company() {
   return (
     <LevelShell>
       <div className="grid gap-8 sm:grid-cols-[13rem_1fr] sm:gap-10">

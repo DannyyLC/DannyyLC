@@ -2,13 +2,13 @@ import LevelShell from "./LevelShell";
 import { TERRITORY } from "@/lib/content";
 
 /**
- * 10⁷ — el territorio.
+ * El territorio.
  *
  * A esta escala ya no hay interfaz que mostrar, solo un lugar. Una mira sobre
  * las coordenadas reales de Aguascalientes: el zoom lleva siete niveles
  * alejándose y aquí, por fin, lo que se ve es un punto en un mapa.
  */
-export default function L8Territory() {
+export default function L6Territory() {
   return (
     <LevelShell frame={false} centered>
       <div className="flex flex-col items-center text-center">

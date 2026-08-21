@@ -29,7 +29,7 @@ const MAP = {
   "Next.js": "siNextdotjs",
   Angular: "siAngular",
   "Tailwind CSS": "siTailwindcss",
-  "TanStack Query": "siTanstack",
+  "TanStack": "siTanstack",
   NestJS: "siNestjs",
   FastAPI: "siFastapi",
   "Spring Boot": "siSpringboot",

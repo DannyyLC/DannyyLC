@@ -8,7 +8,7 @@ import { IDENTITY, DOMAINS, THESIS } from "@/lib/content";
 const CPS = 0.052;
 
 /**
- * 10⁻¹ — el cursor.
+ * El cursor.
  *
  * El nivel más pequeño del sitio y su tesis. No hay imagen, no hay fondo, no
  * hay adorno: un caret que escribe un nombre sobre negro. Si esto no aguanta

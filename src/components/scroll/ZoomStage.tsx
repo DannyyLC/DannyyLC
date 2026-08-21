@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ComponentType } from "react";
+import { useMemo, useRef, useState, type ComponentType } from "react";
 import { ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import ScaleHUD from "@/components/ui/ScaleHUD";
 
@@ -10,6 +10,15 @@ export type Level = {
   /** Nombre corto del nivel, en versalitas en el HUD. */
   name: string;
   /**
+   * Pantallas de scroll que el zoom se detiene en este nivel antes de seguir.
+   *
+   * Durante la estancia la escala no cambia y el tramo se gasta en un progreso
+   * local de 0 a 1, que la capa recibe como la variable CSS `--local`. Es lo
+   * que permite recorrer una pista horizontal sin romper el zoom: se congela,
+   * lo cruzas de lado, y sigue alejándose.
+   */
+  dwell?: number;
+  /**
    * Recibe `active` cuando es el nivel en foco. Sirve para arrancar animaciones
    * que no pueden depender de ScrollTrigger: dentro del escenario sticky las
    * capas nunca se mueven respecto al viewport, así que un trigger por posición
@@ -17,6 +26,39 @@ export type Level = {
    */
   Component: ComponentType<{ active?: boolean }>;
 };
+
+/**
+ * Un tramo del recorrido: o el zoom está quieto en un nivel, o va de uno al
+ * siguiente. Se arma una vez y se recorre en cada frame.
+ */
+type Segment = {
+  kind: "dwell" | "move";
+  /** Nivel donde se está quieto, o nivel de partida del movimiento. */
+  level: number;
+  /** Longitud en pantallas de scroll. */
+  len: number;
+  /** Dónde empieza, acumulado desde el inicio. */
+  start: number;
+};
+
+function buildSegments(levels: Level[]): { segments: Segment[]; total: number } {
+  const segments: Segment[] = [];
+  let start = 0;
+
+  for (let i = 0; i < levels.length; i++) {
+    const dwell = levels[i].dwell ?? 0;
+    if (dwell > 0) {
+      segments.push({ kind: "dwell", level: i, len: dwell, start });
+      start += dwell;
+    }
+    if (i < levels.length - 1) {
+      segments.push({ kind: "move", level: i, len: 1, start });
+      start += 1;
+    }
+  }
+
+  return { segments, total: start };
+}
 
 /**
  * Factor de zoom entre un nivel y el siguiente.
@@ -72,6 +114,8 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   const [active, setActive] = useState(0);
   const [reduced, setReduced] = useState(false);
 
+  const { segments, total } = useMemo(() => buildSegments(levels), [levels]);
+
   useGSAP(
     () => {
       if (prefersReducedMotion()) {
@@ -94,8 +138,11 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
       // se asumiera `true`, la primera pasada creería que ya están visibles y
       // no escribiría nada — el sitio entero quedaría en negro.
       const painted = els.map(() => false);
+      // Último `--local` escrito por capa, para no repetir el write cuando no
+      // cambia — que es el caso de todas las capas menos la de la estancia.
+      const lastLocal = els.map(() => Number.NaN);
 
-      const draw = (p: number) => {
+      const draw = (p: number, dwellLevel: number, local: number) => {
         for (let i = 0; i < els.length; i++) {
           const d = i - p;
 
@@ -126,6 +173,22 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
           // Solo el nivel en foco recibe clics: si no, los enlaces de una capa
           // gigante e invisible se comen el cursor de la que sí se está leyendo.
           els[i].style.pointerEvents = Math.abs(d) < 0.5 ? "auto" : "none";
+
+          // El progreso local viaja como variable CSS y no como prop de React.
+          // Cambia en cada frame, y pasarlo por props re-renderizaría el nivel
+          // sesenta veces por segundo; como custom property lo hereda cualquier
+          // descendiente y se resuelve en el compositor.
+          //
+          // Un nivel ya rebasado se queda en 1, no vuelve a 0. Antes solo se
+          // conservaba el valor mientras `dwellLevel` apuntaba a ese nivel, así
+          // que en cuanto la estancia terminaba el progreso saltaba a cero de
+          // golpe: la pista de proyectos se teletransportaba de la última
+          // tarjeta a la primera justo mientras se alejaba, a la vista.
+          const next = i === dwellLevel ? local : i < p ? 1 : 0;
+          if (lastLocal[i] !== next) {
+            els[i].style.setProperty("--local", next.toFixed(5));
+            lastLocal[i] = next;
+          }
         }
       };
 
@@ -136,8 +199,29 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
         // Sin `scrub`: Lenis ya interpola la posición y ScrollTrigger.update se
         // dispara desde su evento. Añadir scrub encima mete un segundo lag.
         onUpdate: (self) => {
-          const p = self.progress * (levels.length - 1);
-          draw(p);
+          // Se recorre la lista de tramos hasta encontrar dónde cae el scroll.
+          // Son menos de una docena, así que un barrido lineal por frame es más
+          // barato que cualquier estructura para buscarlo.
+          const t = self.progress * total;
+
+          let p = levels.length - 1;
+          let dwellLevel = -1;
+          let local = 0;
+
+          for (const seg of segments) {
+            if (t > seg.start + seg.len) continue;
+            const within = clamp01((t - seg.start) / seg.len);
+            if (seg.kind === "dwell") {
+              p = seg.level;
+              dwellLevel = seg.level;
+              local = within;
+            } else {
+              p = seg.level + within;
+            }
+            break;
+          }
+
+          draw(p, dwellLevel, local);
 
           if (rail.current) {
             rail.current.style.transform = `scaleY(${self.progress})`;
@@ -148,10 +232,10 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
         },
       });
 
-      draw(0);
+      draw(0, -1, 0);
       return () => st.kill();
     },
-    { scope: root, dependencies: [levels.length] },
+    { scope: root, dependencies: [levels.length, segments, total] },
   );
 
   // Fallback sin movimiento: un documento normal.
@@ -173,7 +257,7 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   }
 
   return (
-    <div ref={root} style={{ height: `${levels.length * 100}vh` }}>
+    <div ref={root} style={{ height: `${(total + 1) * 100}vh` }}>
       <div
         ref={viewport}
         className="sticky top-0 h-screen overflow-hidden"

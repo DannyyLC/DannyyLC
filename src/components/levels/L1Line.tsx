@@ -2,7 +2,7 @@ import LevelShell from "./LevelShell";
 import { BIO } from "@/lib/content";
 
 /**
- * 10⁰ — la línea.
+ * La línea.
  *
  * Un paso atrás desde el caret: ahora se ve la línea completa que estaba
  * escribiendo, y alrededor de ella, quién la escribe.

@@ -44,7 +44,7 @@ export const THESIS =
  * infraestructura, que es donde está la diferencia. Un puesto describe un
  * casillero; estos tres describen el alcance real.
  */
-export const DOMAINS = ["AI systems", "Full-stack", "Infrastructure"] as const;
+export const DOMAINS = ["AI", "Full-stack", "Infrastructure"] as const;
 
 /**
  * Nivel 10⁰ — qué sabe hacer.
@@ -81,7 +81,7 @@ export const SKILL_GRAPH = [
   { group: "Languages", items: ["Python", "TypeScript", "JavaScript", "Java"] },
   {
     group: "Frontend",
-    items: ["React", "Next.js", "Angular", "Tailwind CSS", "TanStack Query"],
+    items: ["React", "Next.js", "Angular", "Tailwind CSS", "TanStack"],
   },
   {
     group: "Backend",
@@ -108,162 +108,133 @@ export const SKILL_GRAPH = [
   },
 ] as const;
 
-/** Nivel 10² — la arquitectura de Tesseract, dibujada. */
-export const SYSTEM = {
-  name: "Tesseract",
-  /**
-   * Primera persona a propósito. "An agent platform, not a chatbot wrapper"
-   * describía un producto; esto describe a quien lo diseñó, que es de quien
-   * trata el sitio.
-   */
-  tagline:
-    "I architected and built it: three services, one shared conversation state, no chatbot wrapper.",
-  /** Encabeza los mecanismos: son decisiones suyas, no features del producto. */
-  mechanicsLead: "Three problems I had to solve",
-  nodes: [
-    {
-      id: "web",
-      label: "web-client",
-      stack: "Next.js",
-      note: "Operator console",
-    },
-    {
-      id: "gateway",
-      label: "gateway",
-      stack: "NestJS · Node",
-      // Las notas no pasan de ~22 caracteres: más largas se salen de la caja
-      // de 120 unidades del diagrama en L3System.
-      note: "Auth, routing, limits",
-    },
-    {
-      id: "agents",
-      label: "agents",
-      stack: "Python",
-      note: "Tool use, orchestration",
-    },
-    {
-      id: "store",
-      label: "postgres",
-      stack: "Prisma",
-      note: "Conversation state",
-    },
-  ],
-  /** Lo que de verdad es difícil, y por qué. */
-  mechanics: [
-    {
-      title: "Token-threshold triggers",
-      body: "Conversations summarize themselves before they hit the context limit, instead of failing at it.",
-    },
-    {
-      title: "Per-conversation locking",
-      body: "Two messages arriving at once cannot interleave and corrupt the same thread's state.",
-    },
-    {
-      title: "Multi-provider routing",
-      body: "One interface over several model APIs, so a provider outage is a config change and not an incident.",
-    },
-  ],
-} as const;
-
-type Product = {
+type Project = {
   name: string;
   what: string;
-  /** Qué hizo él, explícito. Sin esto el nivel se lee como catálogo. */
+  /** Dónde se construyó. Distingue producto propio de encargo sin etiqueta. */
+  client: string;
   role: string;
   detail: string;
   stack: readonly string[];
-  /** Solo los productos con superficie pública enlazan a algún lado. */
   href?: string;
 };
 
 /**
- * Nivel 10³ — lo que construyó.
+ * Proyectos — cosas construidas.
  *
- * Cada entrada lleva su papel explícito y está escrita en primera persona. La
- * versión anterior ("Production SaaS for…", "Sold as SaaS…") era copy de
- * catálogo: describía qué vende Fractal, no qué hace él, y convertía su
- * portafolio en el deck de la empresa.
+ * El criterio es qué tipo de cosa es, no quién la pagó: aquí van los artefactos
+ * y en `EXPERIENCE` los puestos. Por eso QueSO y el agente de RGM se movieron a
+ * experiencia —fueron encargos, con cliente y periodo— y la investigación de la
+ * UAA vino para acá: es un proyecto de investigación, no un empleo.
+ *
+ * De Tesseract solo se dice qué es y con qué está hecho. La arquitectura
+ * interna —servicios, estado de conversación, locking— es privada y no tiene
+ * por qué estar en una página pública; lo que queda aquí es exactamente lo que
+ * ya se ve en fractalops.com.mx.
  */
-export const PRODUCTS_LEAD = "Three products I build and maintain at Fractal.";
-
-export const PRODUCTS: readonly Product[] = [
+export const PROJECTS: readonly Project[] = [
   {
     name: "Tesseract",
     what: "AI agent platform",
+    client: "Fractal",
     role: "Architected and built",
     detail:
-      "I designed the whole platform and built it to production: Python agents behind a NestJS gateway, operated from a Next.js console.",
+      "A platform for building and running AI agents in production. I designed it and took it from an empty repository to a paying deployment.",
     stack: ["Next.js", "NestJS", "TypeScript", "PostgreSQL", "Docker"],
     href: "https://fractalops.com.mx",
   },
   {
+    name: "Agent-based RAG",
+    what: "Research · MP-80-25",
+    client: "Universidad Autónoma de Aguascalientes",
+    role: "Built the retrieval system",
+    // El 8.9% va dentro de la frase y no como número gigante. Destacarlo en
+    // grande lo convertía en la única cosa medible del sitio y por contraste
+    // hacía parecer que lo demás no lo estaba.
+    detail:
+      "A multi-agent retrieval system on LangGraph and LangChain for autonomous information retrieval, benchmarked against several open-source models. It cut cosine distance by 8.9% across 252 standardized questions.",
+    stack: ["LangGraph", "LangChain", "Python", "Qdrant"],
+  },
+  {
     name: "Axis",
     what: "Multi-tenant inventory",
+    client: "Fractal",
     role: "Architecture and product direction",
     detail:
-      "I set the multi-tenant model that lets every client define their own attributes, and the deployment split that ships it as SaaS, self-hosted, or fully offline.",
+      "Inventory where every client defines their own attributes. I set the tenancy model and the deployment split that ships it as SaaS, self-hosted, or fully offline.",
     stack: ["Nx", "Prisma", "Expo", "PostgreSQL"],
   },
   {
     name: "Fractal Hub",
     what: "Public surface",
+    client: "Fractal",
     role: "Architecture and build",
     detail:
       "A Turborepo holding fractalops.com.mx and the Tesseract landing, so marketing ships with the site instead of with the product.",
     stack: ["Turborepo", "Next.js", "GSAP", "Three.js"],
     href: "https://fractalops.com.mx",
   },
-] as const;
+];
 
-/** Nivel 10⁴ — trabajo por encargo: se cobra por proyecto. */
-export const WORK = [
+type Role = {
+  org: string;
+  title: string;
+  period: string;
+  detail: string;
+  stack: readonly string[];
+};
+
+/**
+ * Experiencia — puestos, con fechas.
+ *
+ * Va en tabla y no en tarjetas a propósito, aunque el nivel anterior sí las
+ * use: lo que se escanea aquí es quién, qué puesto y cuándo, y una tabla
+ * entrega esas tres columnas de un vistazo.
+ *
+ * Ordenada por lo más reciente, con lo que sigue en curso arriba.
+ */
+export const EXPERIENCE: readonly Role[] = [
   {
-    client: "RGM Advanced",
-    role: "AI sales agent",
-    period: "2025",
+    org: "Fractal",
+    title: "Co-founder & CEO",
+    period: "Jan 2025 — present",
     detail:
-      "Designed and shipped an AI agent that runs their sales funnel end to end — qualifying inbound leads, answering product questions, and handing off to a human at the moment it stops being useful.",
-    stack: ["LLM agents", "RAG", "Automation"],
+      "I own the technical side from zero to production: architecture, product decisions, and the cloud it all runs on.",
+    stack: ["Next.js", "NestJS", "PostgreSQL", "GCP", "Docker"],
   },
   {
-    client: "Solarity Paneles Solares",
-    role: "Full Stack Developer",
+    org: "Gobierno de Aguascalientes · UAA",
+    title: "Quality management system",
+    period: "2026 — present",
+    detail:
+      "Traceability for artisanal cheese production under COFEPRIS norms NOM-243, NOM-251 and NOM-051. Seventy-three endpoints covering milk reception, sanitation, cold chain, inventory, distribution and market withdrawal.",
+    stack: ["Node.js", "Express", "MongoDB", "Redis", "Angular", "Docker"],
+  },
+  {
+    org: "Solarity Paneles Solares",
+    title: "Full Stack Developer",
     period: "May 2025 — Jan 2026",
     detail:
-      "Inventory control and project tracking for a solar installer. Field crews are located through the Google Maps API; the whole thing ships through GitHub Actions into Docker Compose.",
-    stack: ["Next.js", "React", "TypeScript", "Docker", "Tailwind"],
+      "Inventory control and project tracking for a solar installer. Field crews are located through the Google Maps API; the whole thing ships through GitHub Actions.",
+    stack: ["Next.js", "React", "TypeScript", "Docker", "Tailwind CSS"],
   },
   {
-    client: "Softweb Tecnologías",
-    role: "AI Consultant",
+    org: "Softweb Tecnologías",
+    title: "AI Consultant",
     period: "Apr — Oct 2025",
     detail:
-      "Put LLMs into enterprise workflows using MCP for service orchestration, plus an agent that joins a document database to the tools a business actually runs on.",
+      "Put LLMs into enterprise workflows using MCP for service orchestration, plus an agent joining a document database to the tools a business actually runs on.",
     stack: ["MCP", "RAG", "LangChain"],
   },
   {
-    client: "Gobierno de Aguascalientes · UAA",
-    role: "Quality management system",
-    period: "2026 — present",
+    org: "RGM Advanced",
+    title: "AI sales agent",
+    period: "2025",
     detail:
-      "Traceability for artisanal cheese production under COFEPRIS norms NOM-243, NOM-251 and NOM-051. Seventy-three endpoints covering the full cycle: milk reception, sanitation, cold chain, inventory, distribution, and market withdrawal.",
-    stack: ["Node.js", "Express", "MongoDB", "Redis", "Angular", "Docker"],
+      "An agent that runs their sales funnel end to end: it qualifies inbound leads, answers product questions, and hands off to a human at the moment it stops being useful.",
+    stack: ["LLM agents", "RAG", "Automation"],
   },
-] as const;
-
-/** Nivel 10⁵ — investigación. Los números se ganaron su propio nivel. */
-export const RESEARCH = {
-  title: "Advanced Agent-based RAG Systems",
-  institution: "Universidad Autónoma de Aguascalientes",
-  projectId: "MP-80-25",
-  period: "Jan — Nov 2025",
-  body: "A multi-agent retrieval system built on LangGraph and LangChain, for autonomous information retrieval and contextual response generation.",
-  metrics: [
-    { value: "8.9", unit: "%", label: "reduction in cosine distance" },
-    { value: "252", unit: "", label: "standardized benchmark questions" },
-    { value: "5", unit: "+", label: "open-source LLMs compared" },
-  ],
-} as const;
+];
 
 /**
  * Nivel 10⁶ — lo que dirige.

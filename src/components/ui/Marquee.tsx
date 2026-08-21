@@ -10,8 +10,13 @@ import { TECH_ICON_PATHS } from "@/lib/tech-icons";
  */
 const SECONDS_PER_ITEM = 3.2;
 
-/** Mínimo de placas en la pista, para que siempre desborde el ancho visible. */
-const MIN_TILES = 14;
+/**
+ * Cuántas placas hacen falta para tapar el ancho visible, con margen.
+ *
+ * Cada placa mide `w-28` = 112px y el marco más ancho del sitio es `max-w-6xl`
+ * = 1152px, o sea ~10.3 placas. 14 deja holgura para pantallas más anchas.
+ */
+const TILES_TO_COVER = 14;
 
 /**
  * Una fila del carrusel de tecnologías.
@@ -36,8 +41,18 @@ export default function Marquee({
   const tiles = items.filter((name) => TECH_ICON_PATHS[name]);
   if (tiles.length === 0) return null;
 
-  // Suficientes copias para desbordar el viewport aun con listas cortas.
-  const copies = Math.max(2, Math.ceil(MIN_TILES / tiles.length));
+  // Cuántas copias de la lista van en la pista.
+  //
+  // La animación desplaza la pista exactamente el ancho de UNA copia. Para que
+  // no aparezca un hueco al final del ciclo, lo que queda después de ese
+  // desplazamiento —o sea `copies - 1` copias— todavía tiene que tapar el
+  // ancho visible. De ahí el `1 +`.
+  //
+  // La versión anterior pedía solo que el total llegara a 14 placas, que es
+  // otra cosa: con 7 elementos daba 2 copias, la pista medía 14 placas y al
+  // desplazarse 7 quedaban 7 para tapar 10.3 — tres placas de vacío justo al
+  // cerrar el ciclo, que es el parpadeo que se veía en la fila de AI/ML.
+  const copies = 1 + Math.ceil(TILES_TO_COVER / tiles.length);
 
   return (
     <div

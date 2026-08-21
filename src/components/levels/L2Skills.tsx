@@ -3,7 +3,7 @@ import Marquee from "@/components/ui/Marquee";
 import { SKILL_GRAPH } from "@/lib/content";
 
 /**
- * 10¹ — el stack.
+ * El stack.
  *
  * Seis carruseles, uno por capa, alternando dirección. La versión anterior era
  * un árbol de texto: correcto pero muerto, y en una página que por lo demás es
