@@ -41,7 +41,10 @@ const LEVELS: Level[] = [
   // El único nivel con estancia: el zoom se detiene y ese tramo se gasta
   // cruzando la pista de proyectos en horizontal.
   { exp: 2, name: "projects", dwell: 1.5, Component: L3Projects },
-  { exp: 3, name: "experience", Component: L4Experience },
+  // Segunda estancia: la línea de tiempo se recorre en horizontal, igual que
+  // proyectos, pero la lectura es otra — allá se pasa una lista, aquí se
+  // atraviesa el tiempo y las barras se quedan quietas mientras corre la rejilla.
+  { exp: 3, name: "experience", dwell: 1.5, Component: L4Experience },
   { exp: 4, name: "company", Component: L5Company },
   { exp: 5, name: "contact", Component: L6Contact },
 ];

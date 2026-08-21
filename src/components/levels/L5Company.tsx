@@ -1,3 +1,4 @@
+import FractalMark from "@/components/ui/FractalMark";
 import LevelShell from "./LevelShell";
 import { COMPANY, IDENTITY } from "@/lib/content";
 
@@ -13,11 +14,11 @@ import { COMPANY, IDENTITY } from "@/lib/content";
  * deshace. Además sus trazos ya son blancos, así que encaja en el
  * monocromático sin tocarlo.
  */
-export default function L5Company() {
+export default function L5Company({ active }: { active?: boolean }) {
   return (
     <LevelShell>
       <div className="grid gap-8 sm:grid-cols-[13rem_1fr] sm:gap-10">
-        <CompanyMark />
+        <CompanyMark active={active} />
 
         <div>
           {/* Su papel encabeza, no el nombre de la empresa. Al revés el nivel
@@ -70,17 +71,10 @@ export default function L5Company() {
  * marcas de encuadre de las esquinas y el recuadro deja de leerse como un
  * marco para parecer un borde recortado.
  */
-function CompanyMark() {
+function CompanyMark({ active }: { active?: boolean }) {
   return (
-    <div className="relative flex aspect-square w-full max-w-52 items-center justify-center border border-white/12 p-3">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/logos/fractal.svg"
-        alt="Fractal"
-        className="w-full"
-        width={1024}
-        height={1024}
-      />
+    <div className="relative flex aspect-square w-full max-w-52 items-center justify-center border border-white/12 p-3 text-white">
+      <FractalMark active={active} />
 
       <span className="absolute top-2 left-2 h-2 w-2 border-t border-l border-white/40" />
       <span className="absolute right-2 bottom-2 h-2 w-2 border-r border-b border-white/40" />

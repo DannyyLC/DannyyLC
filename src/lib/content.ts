@@ -180,16 +180,27 @@ type Role = {
   org: string;
   title: string;
   period: string;
+  /** Inicio, `YYYY-MM`. */
+  from: string;
+  /** Fin, `YYYY-MM`, o `null` si sigue en curso. */
+  to: string | null;
   detail: string;
   stack: readonly string[];
 };
 
+/** Origen del eje de la línea de tiempo. Todo se mide en meses desde aquí. */
+export const TIMELINE_ORIGIN = "2025-01";
+/** Fin del eje. Deja aire a la derecha para lo que sigue en curso. */
+export const TIMELINE_END = "2026-12";
+
 /**
  * Experiencia — puestos, con fechas.
  *
- * Va en tabla y no en tarjetas a propósito, aunque el nivel anterior sí las
- * use: lo que se escanea aquí es quién, qué puesto y cuándo, y una tabla
- * entrega esas tres columnas de un vistazo.
+ * Cada puesto lleva `from`/`to` además del texto del periodo, porque el nivel
+ * los dibuja como barras sobre un eje común. Una tabla apila las filas como si
+ * fueran consecutivas y esconde lo más notable de este historial: en junio de
+ * 2025 había cuatro cosas corriendo a la vez. Sobre un eje compartido eso se
+ * ve sin leer una sola fecha.
  *
  * Ordenada por lo más reciente, con lo que sigue en curso arriba.
  */
@@ -198,14 +209,33 @@ export const EXPERIENCE: readonly Role[] = [
     org: "Fractal",
     title: "Co-founder & CEO",
     period: "Jan 2025 — present",
+    from: "2025-01",
+    to: null,
     detail:
       "I own the technical side from zero to production: architecture, product decisions, and the cloud it all runs on.",
     stack: ["Next.js", "NestJS", "PostgreSQL", "GCP", "Docker"],
   },
   {
+    org: "SoftwareSV",
+    title: "Industrial operations platform",
+    // Primer commit del repo el 10 de abril de 2026; el arranque real se toma
+    // dos semanas antes, que es lo que él calcula que llevaba el trabajo de
+    // diseño previo. Último commit hace días, así que sigue abierto.
+    period: "Mar 2026 — present",
+    from: "2026-03",
+    to: null,
+    detail:
+      "A multi-tenant platform for running industrial operations: plants, processes, and the work stations they break into. Each station declares the competencies it needs, and every worker is measured against them.",
+    stack: ["Next.js", "TypeScript", "Spring Boot", "Java 21", "Nginx", "Docker"],
+  },
+  {
     org: "Gobierno de Aguascalientes · UAA",
     title: "Quality management system",
-    period: "2026 — present",
+    // Primer commit del repo el 4 de mayo de 2026, que coincide con lo que él
+    // recuerda del arranque.
+    period: "May 2026 — present",
+    from: "2026-05",
+    to: null,
     detail:
       "Traceability for artisanal cheese production under COFEPRIS norms NOM-243, NOM-251 and NOM-051. Seventy-three endpoints covering milk reception, sanitation, cold chain, inventory, distribution and market withdrawal.",
     stack: ["Node.js", "Express", "MongoDB", "Redis", "Angular", "Docker"],
@@ -214,6 +244,8 @@ export const EXPERIENCE: readonly Role[] = [
     org: "Solarity Paneles Solares",
     title: "Full Stack Developer",
     period: "May 2025 — Jan 2026",
+    from: "2025-05",
+    to: "2026-01",
     detail:
       "Inventory control and project tracking for a solar installer. Field crews are located through the Google Maps API; the whole thing ships through GitHub Actions.",
     stack: ["Next.js", "React", "TypeScript", "Docker", "Tailwind CSS"],
@@ -222,6 +254,8 @@ export const EXPERIENCE: readonly Role[] = [
     org: "Softweb Tecnologías",
     title: "AI Consultant",
     period: "Apr — Oct 2025",
+    from: "2025-04",
+    to: "2025-10",
     detail:
       "Put LLMs into enterprise workflows using MCP for service orchestration, plus an agent joining a document database to the tools a business actually runs on.",
     stack: ["MCP", "RAG", "LangChain"],
@@ -229,7 +263,9 @@ export const EXPERIENCE: readonly Role[] = [
   {
     org: "RGM Advanced",
     title: "AI sales agent",
-    period: "2025",
+    period: "May — Aug 2025",
+    from: "2025-05",
+    to: "2025-08",
     detail:
       "An agent that runs their sales funnel end to end: it qualifies inbound leads, answers product questions, and hands off to a human at the moment it stops being useful.",
     stack: ["LLM agents", "RAG", "Automation"],
