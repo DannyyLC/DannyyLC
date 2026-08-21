@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { EXPERIENCE, TIMELINE_ORIGIN, TIMELINE_END } from "@/lib/content";
+import { useEffect, useMemo, useRef } from "react";
+import { useContent } from "@/lib/i18n";
 
 /** Ancho de una tarjeta. */
 const CARD = 360;
@@ -21,80 +21,6 @@ const STEM = 56;
  */
 const CARD_H = 225;
 
-const months = (ym: string) => {
-  const [y, m] = ym.split("-").map(Number);
-  const [oy, om] = TIMELINE_ORIGIN.split("-").map(Number);
-  return (y - oy) * 12 + (m - om);
-};
-
-const SPAN = months(TIMELINE_END);
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-const COUNT_WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six"];
-
-/** Offset en meses desde el origen → `May 2025`. */
-function monthLabel(offset: number) {
-  const [oy, om] = TIMELINE_ORIGIN.split("-").map(Number);
-  const total = oy * 12 + (om - 1) + offset;
-  return `${MONTH_NAMES[total % 12]} ${Math.floor(total / 12)}`;
-}
-
-/**
- * La frase sobre concurrencia, calculada desde las fechas.
- *
- * El dato que este nivel existe para contar es que varios puestos corrieron a
- * la vez. La versión anterior lo enseñaba con un diagrama de Gantt de cinco
- * carriles y rejilla mensual: técnicamente exacto e ilegible. Una frase lo dice
- * sin que nadie tenga que descifrar un eje.
- */
-function concurrencySentence() {
-  const counts = Array.from({ length: SPAN + 1 }, (_, i) =>
-    EXPERIENCE.filter((r) => {
-      const s = months(r.from);
-      const e = r.to ? months(r.to) : SPAN;
-      return i >= s && i <= e;
-    }).length,
-  );
-
-  const peak = Math.max(...counts);
-  if (peak < 2) return null;
-
-  const from = counts.indexOf(peak);
-  let to = from;
-  while (to + 1 <= SPAN && counts[to + 1] === peak) to++;
-
-  return `${COUNT_WORDS[peak]} of them ran at the same time, between ${monthLabel(from)} and ${monthLabel(to)}.`;
-}
-
-/** Estático: sale de datos que no cambian en runtime. */
-const SENTENCE = concurrencySentence();
-
-/**
- * La línea corre del más antiguo al más reciente.
- *
- * `EXPERIENCE` está en orden inverso, que es como se lee un CV y como lo sirve
- * la capa semántica. Aquí hay que darle la vuelta: una línea de tiempo cuyos
- * nodos van de nuevo a viejo de izquierda a derecha contradice lo único que el
- * lector da por hecho al ver una línea horizontal.
- */
-const ORDERED = [...EXPERIENCE].sort(
-  (a, b) => months(a.from) - months(b.from),
-);
-
 /**
  * Experiencia — una espina con tarjetas colgando.
  *
@@ -109,8 +35,21 @@ const ORDERED = [...EXPERIENCE].sort(
  * es todo lo que hay que entender para leer el nivel.
  */
 export default function L4Experience() {
+  const { EXPERIENCE, EXPERIENCE_SENTENCE, UI } = useContent();
   const viewport = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
+
+  // La línea corre del más antiguo al más reciente. `EXPERIENCE` está en
+  // orden inverso, que es como se lee un CV y como lo sirve la capa
+  // semántica. Aquí hay que darle la vuelta: una línea de tiempo cuyos nodos
+  // van de nuevo a viejo de izquierda a derecha contradice lo único que el
+  // lector da por hecho al ver una línea horizontal.
+  //
+  // `from` compara bien como texto porque es siempre `YYYY-MM`.
+  const ORDERED = useMemo(
+    () => [...EXPERIENCE].sort((a, b) => a.from.localeCompare(b.from)),
+    [EXPERIENCE],
+  );
 
   // Relativo al contenedor interior: el relleno lo aplica la pista exterior.
   const nodeX = (i: number) => CARD / 2 + i * GAP;
@@ -149,11 +88,11 @@ export default function L4Experience() {
     <div className="flex h-screen w-screen flex-col justify-center">
       <div className="mb-6 px-8 text-center md:px-16">
         <p className="font-mono text-sm tracking-[0.3em] text-ash-100 uppercase sm:text-base">
-          Experience
+          {UI.experienceHeading}
         </p>
-        {SENTENCE && (
+        {EXPERIENCE_SENTENCE && (
           <p className="mx-auto mt-3 max-w-lg text-sm text-ash-300">
-            {SENTENCE}
+            {EXPERIENCE_SENTENCE}
           </p>
         )}
       </div>

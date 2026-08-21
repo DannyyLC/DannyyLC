@@ -1,6 +1,8 @@
+"use client";
+
 import FractalMark from "@/components/ui/FractalMark";
 import LevelShell from "./LevelShell";
-import { COMPANY, IDENTITY } from "@/lib/content";
+import { useContent } from "@/lib/i18n";
 
 /**
  * La compañía.
@@ -15,6 +17,8 @@ import { COMPANY, IDENTITY } from "@/lib/content";
  * monocromático sin tocarlo.
  */
 export default function L5Company({ active }: { active?: boolean }) {
+  const { COMPANY, UI } = useContent();
+
   return (
     <LevelShell>
       <div className="grid gap-8 sm:grid-cols-[13rem_1fr] sm:gap-10">
@@ -27,7 +31,7 @@ export default function L5Company({ active }: { active?: boolean }) {
             {COMPANY.role}
           </h2>
           <p className="mt-1 font-mono text-[0.6rem] tracking-[0.2em] text-ash-300 uppercase">
-            {COMPANY.name} · since {COMPANY.since}
+            {COMPANY.name} · {UI.since} {COMPANY.sinceLabel}
           </p>
 
           <p className="mt-5 max-w-xl text-sm leading-relaxed text-ash-200">
@@ -50,7 +54,7 @@ export default function L5Company({ active }: { active?: boolean }) {
             rel="noreferrer"
             className="mt-7 inline-block border-b border-white/30 pb-0.5 font-mono text-xs text-white transition-colors hover:border-white"
           >
-            {IDENTITY.companyDomain} ↗
+            {COMPANY.domain} ↗
           </a>
         </div>
       </div>

@@ -3,12 +3,14 @@
 import { useMemo, useRef, useState, type ComponentType } from "react";
 import { ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import ScaleHUD, { type DialHandle } from "@/components/ui/ScaleHUD";
+import { useContent } from "@/lib/i18n";
+import type { LevelKey } from "@/lib/content";
 
 export type Level = {
   /** Exponente de escala. Es el índice narrativo y lo que muestra el HUD. */
   exp: number;
-  /** Nombre corto del nivel, en versalitas en el HUD. */
-  name: string;
+  /** Identificador del nivel. `UI.levelLabels[key]` da el rótulo visible, por idioma. */
+  key: LevelKey;
   /**
    * Pantallas de scroll que el zoom se detiene en este nivel antes de seguir.
    *
@@ -106,6 +108,7 @@ const smoothstep = (n: number) => n * n * (3 - 2 * n);
  * contenido se apila como documento y se lee de arriba a abajo.
  */
 export default function ZoomStage({ levels }: { levels: Level[] }) {
+  const { UI } = useContent();
   const root = useRef<HTMLDivElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const layers = useRef<(HTMLDivElement | null)[]>([]);
@@ -262,12 +265,12 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   if (reduced) {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-32 px-6 py-32">
-        {levels.map(({ exp, name, Component }) => (
-          <section key={exp} aria-label={name}>
+        {levels.map(({ exp, key, Component }) => (
+          <section key={exp} aria-label={UI.levelLabels[key]}>
             {/* Sin el exponente: fuera del zoom la escala no significa nada.
                 El nombre sí sirve de encabezado en el documento apilado. */}
             <p className="mb-8 font-mono text-xs tracking-[0.2em] text-ash-300 uppercase">
-              {name}
+              {UI.levelLabels[key]}
             </p>
             <Component />
           </section>

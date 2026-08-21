@@ -1,14 +1,6 @@
-import {
-  BIO,
-  COMPANY,
-  CONTACT,
-  DOMAINS,
-  EXPERIENCE,
-  IDENTITY,
-  PROJECTS,
-  SKILL_GRAPH,
-  THESIS,
-} from "@/lib/content";
+"use client";
+
+import { useContent } from "@/lib/i18n";
 
 /**
  * El sitio en texto plano, para lectores de pantalla y para los rastreadores.
@@ -19,14 +11,19 @@ import {
  * alcanzaría los dos o tres niveles visibles en ese instante.
  *
  * Esto no es un resumen ni una versión reducida: es el mismo contenido, en
- * orden, con jerarquía real de encabezados. Se construye desde `content.ts`, no
- * desde los componentes, para no montar dos veces las animaciones de GSAP.
+ * orden, con jerarquía real de encabezados. Se construye desde `content.ts`
+ * (vía `useContent`), no desde los componentes, para no montar dos veces las
+ * animaciones de GSAP. Es un componente de cliente —no Server— porque tiene
+ * que reaccionar al mismo cambio de idioma que el resto del sitio.
  *
  * También es donde viven las tecnologías que el carrusel no dibuja por no tener
  * logo. Aquí sí aparecen, que es lo que importa para búsqueda y para los
  * filtros automáticos de reclutamiento.
  */
 export default function SemanticOutline() {
+  const { IDENTITY, DOMAINS, THESIS, BIO, SKILL_GRAPH, PROJECTS, EXPERIENCE, COMPANY, CONTACT, UI } =
+    useContent();
+
   return (
     <div className="sr-only">
       <h1>{IDENTITY.name}</h1>
@@ -35,19 +32,19 @@ export default function SemanticOutline() {
       </p>
       <p>{THESIS}</p>
 
-      <h2>About</h2>
+      <h2>{UI.semantic.about}</h2>
       {BIO.map((line) => (
         <p key={line.slice(0, 24)}>{line}</p>
       ))}
 
-      <h2>Technical skills</h2>
+      <h2>{UI.semantic.technicalSkills}</h2>
       {SKILL_GRAPH.map((branch) => (
-        <p key={branch.group}>
+        <p key={branch.groupKey}>
           <strong>{branch.group}:</strong> {branch.items.join(", ")}
         </p>
       ))}
 
-      <h2>Projects</h2>
+      <h2>{UI.semantic.projects}</h2>
       {PROJECTS.map((p) => (
         <section key={p.name}>
           <h3>
@@ -60,7 +57,7 @@ export default function SemanticOutline() {
         </section>
       ))}
 
-      <h2>Experience</h2>
+      <h2>{UI.semantic.experience}</h2>
       {EXPERIENCE.map((role) => (
         <section key={role.org}>
           <h3>
@@ -75,7 +72,11 @@ export default function SemanticOutline() {
       <h2>
         {COMPANY.name} — {COMPANY.role}
       </h2>
-      <p>Since {COMPANY.since}</p>
+      {/* `UI.since` es minúscula porque en `L5Company` va a media frase
+          ("Fractal · since …"); aquí abre la oración y se capitaliza. */}
+      <p>
+        {UI.since[0].toUpperCase() + UI.since.slice(1)} {COMPANY.sinceLabel}
+      </p>
       <p>{COMPANY.body}</p>
       {COMPANY.pillars.map((p) => (
         <p key={p.label}>
@@ -86,12 +87,12 @@ export default function SemanticOutline() {
         <a href={COMPANY.url}>{COMPANY.domain}</a>
       </p>
 
-      <h2>Contact</h2>
+      <h2>{UI.semantic.contact}</h2>
       <p>{CONTACT.body}</p>
       <p>{CONTACT.location}</p>
       <ul>
         {CONTACT.links.map((link) => (
-          <li key={link.label}>
+          <li key={link.key}>
             <a href={link.href}>
               {link.label}: {link.value}
             </a>

@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { gsap, SplitText, useGSAP, prefersReducedMotion } from "@/lib/gsap";
-import { IDENTITY, DOMAINS, THESIS } from "@/lib/content";
+import { useContent } from "@/lib/i18n";
 
 /** Segundos por carácter. Ritmo de tecleo, no de animación. */
 const CPS = 0.052;
@@ -15,6 +15,7 @@ const CPS = 0.052;
  * cinco segundos de silencio, el resto del zoom tampoco va a aguantar.
  */
 export default function L0Cursor() {
+  const { IDENTITY, DOMAINS, THESIS, UI } = useContent();
   const root = useRef<HTMLDivElement>(null);
   const caret = useRef<HTMLSpanElement>(null);
 
@@ -112,7 +113,7 @@ export default function L0Cursor() {
       </p>
 
       <p className="hero-cue absolute bottom-12 font-mono text-[0.6rem] tracking-[0.3em] text-ash-400 uppercase">
-        scroll to pull back
+        {UI.scrollCue}
       </p>
     </div>
   );

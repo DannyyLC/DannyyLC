@@ -1,3 +1,7 @@
+"use client";
+
+import { useContent } from "@/lib/i18n";
+
 /**
  * Hueco del retrato.
  *
@@ -12,15 +16,17 @@
  * el sitio que le toca: al lado de quien lo escribe.
  */
 export default function PortraitSlot() {
+  const { UI } = useContent();
+
   return (
     <div className="relative aspect-3/4 w-full max-w-52 border border-white/12">
       <div className="star-dust twinkle absolute inset-0" />
 
       <div className="absolute inset-0 flex items-end p-3">
         <p className="font-mono text-[0.55rem] leading-relaxed tracking-[0.15em] text-ash-400 uppercase">
-          portrait
+          {UI.portrait.line1}
           <br />
-          pending
+          {UI.portrait.line2}
         </p>
       </div>
 

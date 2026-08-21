@@ -1,6 +1,8 @@
+"use client";
+
 import LevelShell from "./LevelShell";
 import PortraitSlot from "@/components/ui/PortraitSlot";
-import { BIO } from "@/lib/content";
+import { useContent } from "@/lib/i18n";
 
 /**
  * La línea.
@@ -13,6 +15,8 @@ import { BIO } from "@/lib/content";
  * demasiado para una página que trata sobre él.
  */
 export default function L1Line() {
+  const { BIO } = useContent();
+
   return (
     <LevelShell>
       <p className="font-mono text-sm text-ash-200 sm:text-base">

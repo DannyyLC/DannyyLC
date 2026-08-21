@@ -1,6 +1,8 @@
+"use client";
+
 import LevelShell from "./LevelShell";
 import Marquee from "@/components/ui/Marquee";
-import { SKILL_GRAPH } from "@/lib/content";
+import { useContent } from "@/lib/i18n";
 
 /**
  * El stack.
@@ -24,11 +26,13 @@ import { SKILL_GRAPH } from "@/lib/content";
  * modo largo cabría por 16 px, que es menos de lo que vale la estimación.
  */
 export default function L2Skills() {
+  const { SKILL_GRAPH } = useContent();
+
   return (
     <LevelShell wide>
       <div className="space-y-10 [@media(min-height:900px)]:space-y-16">
         {SKILL_GRAPH.map((branch, i) => (
-          <div key={branch.group}>
+          <div key={branch.groupKey}>
             <p className="mb-4 text-center font-mono text-[0.6rem] tracking-[0.28em] text-ash-300 uppercase">
               {branch.group}
             </p>

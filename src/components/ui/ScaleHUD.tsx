@@ -2,6 +2,7 @@
 
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import type { Level } from "@/components/scroll/ZoomStage";
+import { useContent } from "@/lib/i18n";
 
 /** Lo que `ZoomStage` llama en cada frame para mover el dial. */
 export type DialHandle = {
@@ -95,6 +96,7 @@ const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
  */
 const ScaleHUD = forwardRef<DialHandle, { levels: Level[]; active: number }>(
   function ScaleHUD({ levels, active }, ref) {
+    const { UI } = useContent();
     const major = useRef<SVGGElement>(null);
     const minor = useRef<SVGGElement>(null);
     const marks = useRef<(SVGLineElement | null)[]>([]);
@@ -204,7 +206,7 @@ const ScaleHUD = forwardRef<DialHandle, { levels: Level[]; active: number }>(
             10<sup className="text-[0.65em]">{current.exp}</sup>
           </p>
           <p className="mt-2 text-[0.6rem] leading-none tracking-[0.18em] whitespace-nowrap text-ash-300 uppercase">
-            {current.name}
+            {UI.levelLabels[current.key]}
           </p>
         </div>
       </div>

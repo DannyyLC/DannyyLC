@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { PROJECTS } from "@/lib/content";
+import { useContent } from "@/lib/i18n";
+import type { Content } from "@/lib/content";
 
 /**
  * Proyectos — pista horizontal.
@@ -18,6 +19,7 @@ import { PROJECTS } from "@/lib/content";
  * resuelve el compositor y no toca el hilo principal.
  */
 export default function L3Projects() {
+  const { PROJECTS, UI } = useContent();
   const viewport = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
 
@@ -62,7 +64,7 @@ export default function L3Projects() {
   return (
     <div className="flex h-screen w-screen flex-col justify-center">
       <p className="mb-10 text-center font-mono text-sm tracking-[0.3em] text-ash-100 uppercase sm:text-base">
-        Projects
+        {UI.projectsHeading}
       </p>
 
       <div ref={viewport} className="overflow-hidden">
@@ -93,11 +95,7 @@ export default function L3Projects() {
   );
 }
 
-function ProjectCard({
-  project,
-}: {
-  project: (typeof PROJECTS)[number];
-}) {
+function ProjectCard({ project }: { project: Content["PROJECTS"][number] }) {
   return (
     // Ancho relativo al viewport, no fijo. Con 320px fijos las cinco tarjetas
     // caben enteras en un monitor de 1920 y la distancia a recorrer sale 0: la

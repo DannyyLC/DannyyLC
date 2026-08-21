@@ -3,7 +3,8 @@
 import { useRef } from "react";
 import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import LevelShell from "./LevelShell";
-import { CONTACT, IDENTITY } from "@/lib/content";
+import { IDENTITY } from "@/lib/content";
+import { useContent } from "@/lib/i18n";
 
 /** Segundos por carácter. El mismo ritmo del hero, para que sea el mismo gesto. */
 const CPS = 0.038;
@@ -20,6 +21,7 @@ const CPS = 0.038;
  * nivel, que era el tercero seguido sin ninguno.
  */
 export default function L6Contact({ active }: { active?: boolean }) {
+  const { CONTACT } = useContent();
   const root = useRef<HTMLDivElement>(null);
   const mail = useRef<HTMLSpanElement>(null);
   const caret = useRef<HTMLSpanElement>(null);

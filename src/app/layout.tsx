@@ -1,8 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import SmoothScrollProvider from "@/components/scroll/SmoothScrollProvider";
-import { IDENTITY, THESIS } from "@/lib/content";
+import LanguageSync from "@/components/LanguageSync";
+import { IDENTITY, getContent } from "@/lib/content";
 import "./globals.css";
+
+// La metadata se congela en el HTML el día de la exportación estática, así
+// que no puede reaccionar al idioma elegido en cliente. Se sirve en inglés,
+// igual que el resto del primer pintado (ver `i18n.ts`).
+const { THESIS } = getContent("en");
 
 const inter = Inter({
   variable: "--font-inter",
@@ -40,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
       <body className="bg-black text-white antialiased">
         <SmoothScrollProvider />
+        <LanguageSync />
         {children}
       </body>
     </html>
