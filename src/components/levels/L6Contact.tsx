@@ -23,6 +23,17 @@ export default function L6Contact({ active }: { active?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const mail = useRef<HTMLSpanElement>(null);
   const caret = useRef<HTMLSpanElement>(null);
+  /**
+   * Si el correo ya se tecleó alguna vez en esta visita.
+   *
+   * "Todavía no llega" y "ya pasó por aquí" no son el mismo estado aunque en
+   * los dos el nivel esté inactivo: en el primero el hueco tiene que estar
+   * vacío, en el segundo tiene que conservar el texto. Sin esta distinción el
+   * efecto rellenaba el correo al montar —o sea antes de que nadie llegara— y
+   * al activarse lo borraba para escribirlo, que es justo lo que no debía
+   * verse.
+   */
+  const hasTyped = useRef(false);
 
   useGSAP(
     () => {
@@ -32,8 +43,15 @@ export default function L6Contact({ active }: { active?: boolean }) {
 
       const full = IDENTITY.email;
 
-      if (!active || prefersReducedMotion()) {
+      if (prefersReducedMotion()) {
         el.textContent = full;
+        caretEl.classList.add("caret");
+        return;
+      }
+
+      if (!active) {
+        // Vacío hasta que le toque; ya tecleado, se queda escrito al volver.
+        el.textContent = hasTyped.current ? full : "";
         caretEl.classList.add("caret");
         return;
       }
@@ -60,6 +78,7 @@ export default function L6Contact({ active }: { active?: boolean }) {
         onComplete: () => {
           el.textContent = full;
           caretEl.classList.add("caret");
+          hasTyped.current = true;
         },
       });
     },
