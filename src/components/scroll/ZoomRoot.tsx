@@ -32,16 +32,16 @@ import L7Contact from "@/components/levels/L7Contact";
  * versión semántica del sitio se renderiza en el servidor.
  */
 const LEVELS: Level[] = [
-  { exp: -1, name: "the cursor", Component: L0Cursor },
-  { exp: 0, name: "the line", Component: L1Line },
-  { exp: 1, name: "the stack", Component: L2Skills },
+  { exp: -1, name: "intro", Component: L0Cursor },
+  { exp: 0, name: "about", Component: L1Line },
+  { exp: 1, name: "stack", Component: L2Skills },
   // El único nivel con estancia: el zoom se detiene y ese tramo se gasta
   // cruzando la pista de proyectos en horizontal.
-  { exp: 2, name: "the projects", dwell: 1.5, Component: L3Projects },
-  { exp: 3, name: "the experience", Component: L4Experience },
-  { exp: 4, name: "the company", Component: L5Company },
-  { exp: 5, name: "the territory", Component: L6Territory },
-  { exp: 6, name: "the point", Component: L7Contact },
+  { exp: 2, name: "projects", dwell: 1.5, Component: L3Projects },
+  { exp: 3, name: "experience", Component: L4Experience },
+  { exp: 4, name: "company", Component: L5Company },
+  { exp: 5, name: "territory", Component: L6Territory },
+  { exp: 6, name: "contact", Component: L7Contact },
 ];
 
 export default function ZoomRoot() {

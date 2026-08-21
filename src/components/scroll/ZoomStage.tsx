@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, type ComponentType } from "react";
 import { ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
-import ScaleHUD from "@/components/ui/ScaleHUD";
+import ScaleHUD, { type DialHandle } from "@/components/ui/ScaleHUD";
 
 export type Level = {
   /** Exponente de escala. Es el índice narrativo y lo que muestra el HUD. */
@@ -109,7 +109,7 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   const root = useRef<HTMLDivElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const layers = useRef<(HTMLDivElement | null)[]>([]);
-  const rail = useRef<HTMLDivElement>(null);
+  const dial = useRef<DialHandle>(null);
 
   const [active, setActive] = useState(0);
   const [reduced, setReduced] = useState(false);
@@ -192,47 +192,67 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
         }
       };
 
+      /**
+       * Lleva todo el HUD y las capas a la posición que corresponde a un
+       * progreso de scroll dado.
+       *
+       * Está aparte de `onUpdate` porque hay que invocarla también en el
+       * arranque: el navegador restaura el scroll al recargar, así que la
+       * página puede nacer a la mitad del recorrido.
+       */
+      const apply = (progress: number) => {
+        // Se recorre la lista de tramos hasta encontrar dónde cae el scroll.
+        // Son menos de una docena, así que un barrido lineal por frame es más
+        // barato que cualquier estructura para buscarlo.
+        const t = progress * total;
+
+        let p = levels.length - 1;
+        let dwellLevel = -1;
+        let local = 0;
+
+        for (const seg of segments) {
+          if (t > seg.start + seg.len) continue;
+          const within = clamp01((t - seg.start) / seg.len);
+          if (seg.kind === "dwell") {
+            p = seg.level;
+            dwellLevel = seg.level;
+            local = within;
+          } else {
+            p = seg.level + within;
+          }
+          break;
+        }
+
+        draw(p, dwellLevel, local);
+
+        // El dial exterior sigue la posición del zoom y el interior el scroll
+        // bruto, así que necesita las dos cifras: durante una estancia `p` se
+        // queda quieto y `progress` no.
+        dial.current?.update(p, progress);
+
+        const next = Math.round(p);
+        setActive((prev) => (prev === next ? prev : next));
+      };
+
       const st = ScrollTrigger.create({
         trigger: root.current,
         start: "top top",
         end: "bottom bottom",
         // Sin `scrub`: Lenis ya interpola la posición y ScrollTrigger.update se
         // dispara desde su evento. Añadir scrub encima mete un segundo lag.
-        onUpdate: (self) => {
-          // Se recorre la lista de tramos hasta encontrar dónde cae el scroll.
-          // Son menos de una docena, así que un barrido lineal por frame es más
-          // barato que cualquier estructura para buscarlo.
-          const t = self.progress * total;
-
-          let p = levels.length - 1;
-          let dwellLevel = -1;
-          let local = 0;
-
-          for (const seg of segments) {
-            if (t > seg.start + seg.len) continue;
-            const within = clamp01((t - seg.start) / seg.len);
-            if (seg.kind === "dwell") {
-              p = seg.level;
-              dwellLevel = seg.level;
-              local = within;
-            } else {
-              p = seg.level + within;
-            }
-            break;
-          }
-
-          draw(p, dwellLevel, local);
-
-          if (rail.current) {
-            rail.current.style.transform = `scaleY(${self.progress})`;
-          }
-
-          const next = Math.round(p);
-          setActive((prev) => (prev === next ? prev : next));
-        },
+        onUpdate: (self) => apply(self.progress),
       });
 
-      draw(0, -1, 0);
+      // Pintado inicial desde la posición real, no desde cero.
+      //
+      // Antes esto era `draw(0, -1, 0)` y corría después de crear el trigger.
+      // Al recargar con el scroll restaurado, ScrollTrigger ya había pintado el
+      // nivel correcto y esta línea lo repisaba con el primero. Solo se
+      // desincronizaba el zoom, porque llamaba a `draw` y no al dial: el
+      // resultado era el nombre en pantalla, el dial al final y la barra de
+      // scroll abajo.
+      apply(st.progress);
+
       return () => st.kill();
     },
     { scope: root, dependencies: [levels.length, segments, total] },
@@ -279,7 +299,7 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
         ))}
       </div>
 
-      <ScaleHUD levels={levels} active={active} railRef={rail} />
+      <ScaleHUD ref={dial} levels={levels} active={active} />
     </div>
   );
 }
