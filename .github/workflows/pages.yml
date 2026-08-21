@@ -1,0 +1,71 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Los permisos que pide `actions/deploy-pages`. `id-token` es para que el
+# despliegue se autentique sin necesidad de un token guardado a mano.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un despliegue a la vez, sin cancelar el que ya va en marcha: cortar a medio
+# publicar puede dejar el sitio servido a medias.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Lee la versión de pnpm del campo `packageManager` de package.json, para
+      # que compile con la misma que se usa en local.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve base path
+        id: base
+        run: |
+          # Un repo llamado <usuario>.github.io se sirve en la raíz del dominio.
+          # Cualquier otro nombre se sirve bajo /<repo>, y sin este prefijo los
+          # assets apuntarían a rutas que no existen.
+          if [[ "${{ github.event.repository.name }}" == *.github.io ]]; then
+            echo "path=" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=/${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build static export
+        env:
+          PAGES: "1"
+          PAGES_BASE_PATH: ${{ steps.base.outputs.path }}
+        run: pnpm build
+
+      # `public/.nojekyll` viaja dentro de `out/`. Sin él, Jekyll se come la
+      # carpeta `_next/` —ignora todo lo que empieza con guion bajo— y el sitio
+      # carga sin CSS ni JS.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
