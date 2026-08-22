@@ -649,7 +649,6 @@ const UI_TEXT: Record<
     levelLabels: Record<LevelKey, string>;
     projectsHeading: string;
     experienceHeading: string;
-    portrait: { line1: string; line2: string };
     since: string;
     semantic: {
       about: string;
@@ -673,7 +672,6 @@ const UI_TEXT: Record<
     },
     projectsHeading: "Projects",
     experienceHeading: "Experience",
-    portrait: { line1: "portrait", line2: "pending" },
     since: "since",
     semantic: {
       about: "About",
@@ -696,7 +694,6 @@ const UI_TEXT: Record<
     },
     projectsHeading: "Proyectos",
     experienceHeading: "Experiencia",
-    portrait: { line1: "retrato", line2: "pendiente" },
     since: "desde",
     semantic: {
       about: "Sobre mí",

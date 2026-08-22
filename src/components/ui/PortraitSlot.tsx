@@ -1,34 +1,37 @@
-"use client";
-
-import { useContent } from "@/lib/i18n";
+import Image from "next/image";
+import { IDENTITY } from "@/lib/content";
+import portrait from "@/assets/portrait.png";
 
 /**
- * Hueco del retrato.
+ * El retrato.
  *
- * Placeholder a propósito y no una silueta genérica: cuando llegue la foto real
- * entra aquí en duotono a negro puro y el encuadre no se mueve ni un pixel.
- * Sustituir por <Image /> con `grayscale contrast-125` y este mismo aspecto.
+ * Duotono a negro puro por CSS (`grayscale contrast-125`), no por archivo: el
+ * original en `src/assets/portrait.png` queda a color, así que si algún día
+ * cambia el tratamiento visual es un cambio de clase, no un reprocesado de
+ * imagen.
  *
- * Vive en `about` y no en el hero. Un retrato difuminado detrás del nombre es
- * el recurso más repetido del género, mete grises en la única pantalla que es
- * negro absoluto, y le pelea la atención al caret, que es el único suceso de
- * esa pantalla. Aquí aparece en la segunda pantalla —lo bastante pronto— y en
- * el sitio que le toca: al lado de quien lo escribe.
+ * El fondo sí sale del archivo, no del componente: un recorte por color no
+ * servía porque la camisa y el fondo original eran del mismo blanco, así que
+ * `portrait.png` ya viene segmentado (fondo transparente) desde un modelo de
+ * detección de persona corrido una sola vez sobre la foto. Con eso, y con la
+ * imagen ya en el aspecto 3:4 del marco, no hace falta `object-position`.
+ *
+ * Importado como módulo y no servido desde `public/` a propósito: un
+ * `<Image src="/portrait.png" />` necesitaría anteponerle `basePath` a mano
+ * (`next.config.ts` lo deriva del nombre del repo en build), y ese cálculo no
+ * vive en ningún otro componente de cliente. La importación estática deja que
+ * el bundler resuelva la ruta con el prefijo correcto solo.
  */
 export default function PortraitSlot() {
-  const { UI } = useContent();
-
   return (
     <div className="relative aspect-3/4 w-full max-w-52 border border-white/12">
-      <div className="star-dust twinkle absolute inset-0" />
-
-      <div className="absolute inset-0 flex items-end p-3">
-        <p className="font-mono text-[0.55rem] leading-relaxed tracking-[0.15em] text-ash-400 uppercase">
-          {UI.portrait.line1}
-          <br />
-          {UI.portrait.line2}
-        </p>
-      </div>
+      <Image
+        src={portrait}
+        alt={IDENTITY.name}
+        fill
+        sizes="13rem"
+        className="object-cover grayscale contrast-125"
+      />
 
       {/* Marcas de encuadre, como visor de cámara */}
       <span className="absolute top-2 left-2 h-2 w-2 border-t border-l border-white/40" />
