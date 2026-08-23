@@ -52,6 +52,10 @@ const MAP = {
   GCP: "siGooglecloud",
   "GitHub Actions": "siGithubactions",
   GitLab: "siGitlab",
+  // Emisores de certificaciones (nivel `about`), no tecnologías del stack.
+  "The Linux Foundation": "siLinuxfoundation",
+  Google: "siGoogle",
+  Platzi: "siPlatzi",
 };
 
 const entries = [];

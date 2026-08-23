@@ -21,8 +21,22 @@ import { useContent } from "@/lib/i18n";
  * filtros automáticos de reclutamiento.
  */
 export default function SemanticOutline() {
-  const { IDENTITY, DOMAINS, THESIS, BIO, SKILL_GRAPH, PROJECTS, EXPERIENCE, COMPANY, CONTACT, UI } =
-    useContent();
+  const {
+    IDENTITY,
+    DOMAINS,
+    THESIS,
+    BIO,
+    EDUCATION,
+    LANGUAGE,
+    SOFT_SKILLS,
+    CERTIFICATIONS,
+    SKILL_GRAPH,
+    PROJECTS,
+    EXPERIENCE,
+    COMPANY,
+    CONTACT,
+    UI,
+  } = useContent();
 
   return (
     <div className="sr-only">
@@ -35,6 +49,18 @@ export default function SemanticOutline() {
       <h2>{UI.semantic.about}</h2>
       {BIO.map((line) => (
         <p key={line.slice(0, 24)}>{line}</p>
+      ))}
+      <p>
+        {EDUCATION.degree} — {EDUCATION.school}, {EDUCATION.period}
+      </p>
+      <p>{LANGUAGE}</p>
+      <p>
+        <strong>{UI.softSkillsLabel}:</strong> {SOFT_SKILLS.join(", ")}
+      </p>
+      {CERTIFICATIONS.map((c) => (
+        <p key={c.title}>
+          <strong>{c.title}</strong> — {c.issuer}, {c.date}
+        </p>
       ))}
 
       <h2>{UI.semantic.technicalSkills}</h2>
@@ -53,6 +79,7 @@ export default function SemanticOutline() {
           <p>{p.client}</p>
           <p>{p.role}</p>
           <p>{p.detail}</p>
+          <p>{p.technical}</p>
           <p>{p.stack.join(", ")}</p>
         </section>
       ))}
@@ -78,11 +105,6 @@ export default function SemanticOutline() {
         {UI.since[0].toUpperCase() + UI.since.slice(1)} {COMPANY.sinceLabel}
       </p>
       <p>{COMPANY.body}</p>
-      {COMPANY.pillars.map((p) => (
-        <p key={p.label}>
-          <strong>{p.label}:</strong> {p.body}
-        </p>
-      ))}
       <p>
         <a href={COMPANY.url}>{COMPANY.domain}</a>
       </p>

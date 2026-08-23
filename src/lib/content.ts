@@ -47,6 +47,13 @@ export const TIMELINE_END = "2026-12";
 /** Mes en que arrancó Fractal. Coincide con `EXPERIENCE_BASE[0].from`. */
 const FRACTAL_FOUNDED = "2025-01";
 
+/**
+ * Formación. Julio y no agosto: hay que contar el propedéutico, que arrancó
+ * antes que las clases regulares.
+ */
+const EDUCATION_START = "2023-07";
+const EDUCATION_END = "2027-12";
+
 // ─────────────────────────────────────────────────────────────────────────
 // Fechas: un solo formateador por idioma, para no escribir dos veces el
 // mismo periodo a mano y arriesgar que se desincronicen.
@@ -116,32 +123,17 @@ function formatPeriod(from: string, to: string | null, lang: Lang): string {
   return `${monthYear(from, lang, false)} — ${monthYear(to, lang, false)}`;
 }
 
-function monthsFromOrigin(ym: string): number {
-  const [y, m] = ym.split("-").map(Number);
-  const [oy, om] = TIMELINE_ORIGIN.split("-").map(Number);
-  return (y - oy) * 12 + (m - om);
-}
-
-/** Offset en meses desde el origen → `"May 2025"` / `"mayo de 2025"`. */
-function monthLabelOffset(offset: number, lang: Lang): string {
-  const [oy, om] = TIMELINE_ORIGIN.split("-").map(Number);
-  const total = oy * 12 + (om - 1) + offset;
-  const y = Math.floor(total / 12);
-  const m = total % 12;
-  return lang === "es" ? `${MONTHS_FULL.es[m]} de ${y}` : `${MONTHS_FULL.en[m]} ${y}`;
-}
-
 /**
  * La línea del hero.
  *
- * La anterior —"every system on this page started as one blinking cursor"— era
- * una metáfora que no se sostenía sola: no decía qué iba a pasar ni de quién
- * era lo que se estaba viendo. Esta explica la mecánica de la página y coloca
- * el logro en la misma frase, sin recurrir a un título.
+ * Dos versiones anteriores cerraban en un logro —una empresa construida— y
+ * las dos sonaban a que la carrera ya había llegado a algún lado. No es el
+ * caso: sigue en curso. Esta explica la mecánica de la página (el zoom hacia
+ * afuera) sin resolverla en un final.
  */
 const THESIS: Record<Lang, string> = {
-  en: "This page starts at a cursor and pulls back until it reaches a company I built.",
-  es: "Esta página empieza en un cursor y se aleja hasta llegar a una empresa que construí.",
+  en: "This page is a zoom pulling outward: every level you cross is another step of what I've built so far, and it's still being written.",
+  es: "Esta página es un zoom hacia afuera: cada nivel que cruzas es otro paso de lo que llevo construido, y todavía se sigue escribiendo.",
 };
 
 /**
@@ -170,18 +162,76 @@ const DOMAINS: Record<Lang, readonly string[]> = {
  */
 const BIO: Record<Lang, readonly string[]> = {
   en: [
-    "I am a Computer Systems Engineering student at the Universidad Autónoma de Aguascalientes, graduating December 2027.",
-    "I build whole systems, not slices of them. A project of mine usually has a React or Next.js front end, a NestJS, FastAPI or Spring Boot service behind it, PostgreSQL or MongoDB underneath, and a pipeline that puts all of it on GCP without anyone touching a server.",
-    "AI is where I go deepest: multi-agent retrieval on LangGraph, RAG over vector stores, MCP for tool orchestration, and conversation systems that keep their state while routing across model providers. I measure the results — my research at the UAA cut cosine distance by 8.9% across 252 standardized questions.",
-    "What I care about is the part that comes after the demo: locking, token budgets, provider failover, backups, the cold path at 2 a.m. It is the unglamorous half, and it decides whether a system is still running six months later.",
+    "I study Computer Systems Engineering at the UAA, and I've been building complete software since before finishing the degree: not just what a user sees, but what runs behind it and the cloud it lives on.",
+    "Where I go deepest is AI: systems that look up and use information on their own, understand context, and give answers you can actually trust.",
+    "What I care about most is what happens after the demo: that a system holds up under real load, that it doesn't fall over when something fails, that there's a plan when things go wrong. It's the unglamorous half of the work, and it's the half that decides whether something is still running six months later.",
   ],
   es: [
-    "Soy estudiante de Ingeniería en Sistemas Computacionales en la Universidad Autónoma de Aguascalientes; me gradúo en diciembre de 2027.",
-    "Construyo sistemas completos, no partes sueltas. Un proyecto mío suele tener un frontend en React o Next.js, un servicio en NestJS, FastAPI o Spring Boot detrás, PostgreSQL o MongoDB debajo, y un pipeline que sube todo a GCP sin que nadie toque un servidor.",
-    "Donde más profundizo es en IA: recuperación multiagente sobre LangGraph, RAG sobre bases vectoriales, MCP para orquestar herramientas, y sistemas de conversación que conservan su estado mientras enrutan entre proveedores de modelos. Mido los resultados — mi investigación en la UAA redujo la distancia coseno 8.9% sobre 252 preguntas estandarizadas.",
-    "Lo que me importa es lo que viene después de la demo: locking, presupuestos de tokens, failover entre proveedores, respaldos, la guardia fría de las 2 a.m. Es la mitad menos vistosa, y es la que decide si un sistema sigue corriendo seis meses después.",
+    "Estudio Ingeniería en Sistemas Computacionales en la UAA, y llevo desde antes de terminar la carrera construyendo software completo: no solo lo que ve un usuario, sino también lo que corre detrás y la nube donde vive todo.",
+    "Donde más profundizo es en inteligencia artificial: sistemas que buscan y usan información por su cuenta, entienden el contexto, y dan respuestas en las que se puede confiar.",
+    "Lo que más me importa es lo que pasa después de la demo: que un sistema aguante cuando hay muchos usuarios, que no se caiga si algo falla, que haya un plan si las cosas salen mal. Es la parte menos vistosa del trabajo, y es la que decide si algo sigue funcionando seis meses después.",
   ],
 };
+
+/**
+ * Formación, idioma, habilidades blandas y certificaciones.
+ *
+ * Viven en `about` (10⁰), junto a la bio — son datos personales, no técnicos,
+ * así que no tenía sentido meterlos en `stack`. `EDUCATION.period` sale de
+ * las mismas fechas que usa el resto del sitio para no escribir el rango a
+ * mano; la escuela y la carrera sí son nombres propios y no se traducen salvo
+ * el nombre de la carrera, que sí cambia con el idioma.
+ */
+const DEGREE: Record<Lang, string> = {
+  en: "Computer Systems Engineering",
+  es: "Ingeniería en Sistemas Computacionales",
+};
+
+const SCHOOL = "Universidad Autónoma de Aguascalientes";
+
+/** Una sola línea, sin justificarla — el examen de colocación de la UAA queda implícito. */
+const LANGUAGE_LINE: Record<Lang, string> = {
+  en: "English — C1",
+  es: "Inglés — C1",
+};
+
+const SOFT_SKILLS: Record<Lang, readonly string[]> = {
+  en: [
+    "Teamwork",
+    "Effective communication",
+    "Leadership",
+    "Problem solving",
+    "Time management",
+  ],
+  es: [
+    "Trabajo en equipo",
+    "Comunicación efectiva",
+    "Liderazgo",
+    "Resolución de problemas",
+    "Organización y gestión del tiempo",
+  ],
+};
+
+/**
+ * Curadas, no las 25 que existen: la mayoría son cursos introductorios de
+ * Platzi que ya cubre de sobra dominar el stack a nivel profesional —
+ * listarlos todos se lee como relleno. Estas 4 aportan algo que el resto del
+ * sitio no dice. `issuer` es la llave que mapea al logo en `tech-icons.ts` —
+ * no se traduce, es nombre propio, igual que `title`.
+ */
+type CertIssuer = "The Linux Foundation" | "Google" | "Platzi";
+
+const CERTIFICATIONS_BASE: readonly {
+  issuer: CertIssuer;
+  title: string;
+  /** Mes de emisión, `YYYY-MM` — se formatea con `monthYear`, no a mano. */
+  ym: string;
+}[] = [
+  { issuer: "The Linux Foundation", title: "Introduction to Linux (LFS101)", ym: "2025-04" },
+  { issuer: "Google", title: "Artificial Intelligence and Productivity", ym: "2025-04" },
+  { issuer: "Platzi", title: "Entorno de trabajo para Data e IA", ym: "2024-07" },
+  { issuer: "Platzi", title: "Redes Neuronales Convolucionales", ym: "2024-08" },
+];
 
 /**
  * Nivel 10¹ — el stack.
@@ -249,7 +299,7 @@ const SKILL_GROUP_LABELS: Record<Lang, Record<SkillGroupKey, string>> = {
     backend: "Backend",
     "ai-ml": "AI / ML",
     data: "Data",
-    infra: "Infra",
+    infra: "Infrastructure",
   },
   es: {
     languages: "Lenguajes",
@@ -257,7 +307,7 @@ const SKILL_GROUP_LABELS: Record<Lang, Record<SkillGroupKey, string>> = {
     backend: "Backend",
     "ai-ml": "IA / ML",
     data: "Datos",
-    infra: "Infra",
+    infra: "Infraestructura",
   },
 };
 
@@ -300,7 +350,7 @@ const PROJECTS_BASE: readonly {
   {
     name: "Axis",
     client: "Fractal",
-    stack: ["Nx", "Prisma", "Expo", "PostgreSQL"],
+    stack: ["React", "TanStack", "Nx", "Prisma", "Expo", "PostgreSQL"],
   },
   {
     name: "Fractal Hub",
@@ -310,63 +360,80 @@ const PROJECTS_BASE: readonly {
   },
 ];
 
+/**
+ * `detail` es la prosa que se lee de entrada: qué hace el proyecto y por qué
+ * importó, sin inventario técnico — para eso ya están los chips de `stack`.
+ * `technical` es la capa opcional que se revela con "ver más" (`<details>` en
+ * `L3Projects`), para quien sí quiere el nivel de ingeniería.
+ */
 const PROJECT_TEXT: Record<
   Lang,
-  Record<ProjectName, { what: string; role: string; detail: string }>
+  Record<ProjectName, { what: string; role: string; detail: string; technical: string }>
 > = {
   en: {
     Tesseract: {
       what: "AI agent platform",
       role: "Architected and built",
       detail:
-        "A platform for building and running AI agents in production. I designed it and took it from an empty repository to a paying deployment.",
+        "A platform for building and running AI agents in production. I designed it and built it from scratch, and today real clients use it.",
+      technical:
+        "Next.js on the front end, NestJS and PostgreSQL behind it, everything containerized with Docker. I designed the agent model and the orchestration layer that lets several run in production at once.",
     },
     "Agent-based RAG": {
       what: "Research · MP-80-25",
       role: "Built the retrieval system",
-      // El 8.9% va dentro de la frase y no como número gigante. Destacarlo en
-      // grande lo convertía en la única cosa medible del sitio y por contraste
-      // hacía parecer que lo demás no lo estaba.
       detail:
-        "A multi-agent retrieval system on LangGraph and LangChain for autonomous information retrieval, benchmarked against several open-source models. It cut cosine distance by 8.9% across 252 standardized questions.",
+        "A research project at the UAA to get an AI to look up information on its own and give better answers. I benchmarked it against several open-source models: 8.9% better accuracy across 252 standardized questions.",
+      technical:
+        "Multi-agent retrieval on LangGraph and LangChain, with Qdrant as the vector store. Each agent has a distinct role inside the retrieval pipeline.",
     },
     Axis: {
       what: "Multi-tenant inventory",
-      role: "Architecture and product direction",
+      role: "Architecture, product, and build",
       detail:
-        "Inventory where every client defines their own attributes. I set the tenancy model and the deployment split that ships it as SaaS, self-hosted, or fully offline.",
+        "An inventory system where every client builds their own fields, instead of the software forcing a fixed structure on them. I decided how it splits across clients and how it ships: cloud-hosted, on their own servers, or fully offline.",
+      technical:
+        "React and TanStack on the front end, multi-tenant architecture on Nx and Prisma, with Expo for the mobile app and PostgreSQL underneath — a per-client dynamic schema without losing efficient queries.",
     },
     "Fractal Hub": {
       what: "Public surface",
       role: "Architecture and build",
       detail:
-        "A Turborepo holding fractalops.com.mx and the Tesseract landing, so marketing ships with the site instead of with the product.",
+        "Fractal's public site and the Tesseract landing page, in one repository, so marketing ships without touching the product.",
+      technical: "A Turborepo with Next.js, GSAP for animation, and Three.js for the 3D pieces.",
     },
   },
   es: {
     Tesseract: {
       what: "Plataforma de agentes de IA",
-      role: "Arquitecté y construí",
+      role: "Diseñé y construí",
       detail:
-        "Una plataforma para construir y correr agentes de IA en producción. La diseñé y la llevé de un repositorio vacío a un despliegue que factura.",
+        "Una plataforma para construir y correr agentes de IA en producción. La diseñé y la construí de cero, y hoy la usan clientes reales.",
+      technical:
+        "Next.js en el frontend, NestJS y PostgreSQL detrás, todo en Docker. Diseñé el modelo de agentes y la capa que permite correr varios en producción a la vez.",
     },
     "Agent-based RAG": {
       what: "Investigación · MP-80-25",
       role: "Construí el sistema de recuperación",
       detail:
-        "Un sistema de recuperación multiagente sobre LangGraph y LangChain para recuperación de información autónoma, evaluado contra varios modelos de código abierto. Redujo la distancia coseno 8.9% sobre 252 preguntas estandarizadas.",
+        "Un proyecto de investigación en la UAA para que una IA busque información por su cuenta y dé mejores respuestas. Lo evalué contra varios modelos de código abierto: 8.9% más precisión sobre 252 preguntas estandarizadas.",
+      technical:
+        "Recuperación multiagente sobre LangGraph y LangChain, con Qdrant como base vectorial. Cada agente tiene un rol distinto dentro del pipeline de recuperación.",
     },
     Axis: {
       what: "Inventario multi-tenant",
-      role: "Arquitectura y dirección de producto",
+      role: "Arquitectura, producto y construcción",
       detail:
-        "Inventario donde cada cliente define sus propios atributos. Definí el modelo de tenencia y el esquema de despliegue que lo entrega como SaaS, autoalojado, o completamente offline.",
+        "Un sistema de inventario donde cada cliente arma sus propios campos, en vez de que el software le imponga una estructura fija. Decidí cómo se reparte entre clientes y cómo se entrega: en la nube, en sus propios servidores, o sin conexión.",
+      technical:
+        "React y TanStack en el frontend, arquitectura multi-tenant sobre Nx y Prisma, con Expo para la app móvil y PostgreSQL de base — esquema dinámico por cliente sin perder consultas eficientes.",
     },
     "Fractal Hub": {
       what: "Superficie pública",
       role: "Arquitectura y construcción",
       detail:
-        "Un Turborepo que aloja fractalops.com.mx y el landing de Tesseract, para que marketing se despliegue junto con el sitio y no junto con el producto.",
+        "El sitio público de Fractal y la página de Tesseract, en un solo repositorio, para que el marketing se actualice sin tocar el producto.",
+      technical: "Un monorepo con Turborepo, Next.js, GSAP para animación y Three.js para los elementos 3D.",
     },
   },
 };
@@ -412,7 +479,7 @@ const EXPERIENCE_BASE: readonly {
     // diseño previo. Último commit hace días, así que sigue abierto.
     from: "2026-03",
     to: null,
-    stack: ["Next.js", "TypeScript", "Spring Boot", "Java 21", "Nginx", "Docker"],
+    stack: ["Next.js", "TypeScript", "Spring Boot", "Java", "PostgreSQL", "Nginx", "Docker"],
   },
   {
     org: "Gobierno de Aguascalientes · UAA",
@@ -426,19 +493,19 @@ const EXPERIENCE_BASE: readonly {
     org: "Solarity Paneles Solares",
     from: "2025-05",
     to: "2026-01",
-    stack: ["Next.js", "React", "TypeScript", "Docker", "Tailwind CSS"],
+    stack: ["Next.js", "React", "TypeScript", "Python", "Django", "PostgreSQL", "Docker", "Tailwind CSS"],
   },
   {
     org: "Softweb Tecnologías",
     from: "2025-04",
     to: "2025-10",
-    stack: ["MCP", "RAG", "LangChain"],
+    stack: ["Python", "LangChain", "RAG", "MCP"],
   },
   {
     org: "RGM Advanced",
     from: "2025-05",
     to: "2025-08",
-    stack: ["LLM agents", "RAG", "Automation"],
+    stack: ["Python", "LangGraph", "RAG"],
   },
 ];
 
@@ -447,139 +514,92 @@ const EXPERIENCE_TEXT: Record<Lang, Record<Org, { title: string; detail: string 
     Fractal: {
       title: "Co-founder & CEO",
       detail:
-        "I own the technical side from zero to production: architecture, product decisions, and the cloud it all runs on.",
+        "Everything that happens at the company runs through me: architecture, product decisions, team coordination, and the cloud it all runs on.",
     },
     SoftwareSV: {
       title: "Industrial operations platform",
       detail:
-        "A multi-tenant platform for running industrial operations: plants, processes, and the work stations they break into. Each station declares the competencies it needs, and every worker is measured against them.",
+        "Software for running industrial plants: it splits the work into stations, each one holding what a worker needs to know, and measures every worker against that.",
     },
     "Gobierno de Aguascalientes · UAA": {
       title: "Quality management system",
       detail:
-        "Traceability for artisanal cheese production under COFEPRIS norms NOM-243, NOM-251 and NOM-051. Seventy-three endpoints covering milk reception, sanitation, cold chain, inventory, distribution and market withdrawal.",
+        "Traceability for artisanal cheese production, under the government's health-safety rules: from the milk coming in to the product going out for sale.",
     },
     "Solarity Paneles Solares": {
       title: "Full Stack Developer",
       detail:
-        "Inventory control and project tracking for a solar installer. Field crews are located through the Google Maps API; the whole thing ships through GitHub Actions.",
+        "Inventory control and project tracking for a solar panel company in Aguascalientes, with field crews located on a live map.",
     },
     "Softweb Tecnologías": {
       title: "AI Consultant",
       detail:
-        "Put LLMs into enterprise workflows using MCP for service orchestration, plus an agent joining a document database to the tools a business actually runs on.",
+        "Built a RAG-based retrieval agent with a complex permission system on top of the client's database: what it returns depends on whether you're an employee or an outside user.",
     },
     "RGM Advanced": {
       title: "AI sales agent",
       detail:
-        "An agent that runs their sales funnel end to end: it qualifies inbound leads, answers product questions, and hands off to a human at the moment it stops being useful.",
+        "An AI agent that runs the whole sales funnel: answers questions, qualifies interested leads, and hands off to a human right when it's needed.",
     },
   },
   es: {
     Fractal: {
       title: "Cofundador y CEO",
       detail:
-        "Llevo el lado técnico de cero a producción: arquitectura, decisiones de producto, y la nube donde corre todo.",
+        "Todo lo que pasa en la empresa pasa por mí: arquitectura, decisiones de producto, coordinación del equipo, y la nube donde corre todo.",
     },
     SoftwareSV: {
       title: "Plataforma de operaciones industriales",
       detail:
-        "Una plataforma multi-tenant para operar plantas industriales: procesos y las estaciones de trabajo en que se dividen. Cada estación declara las competencias que necesita, y a cada trabajador se le mide contra ellas.",
+        "Software para operar plantas industriales: divide el trabajo en estaciones, cada una con lo que un trabajador necesita saber, y mide a cada quien contra eso.",
     },
     "Gobierno de Aguascalientes · UAA": {
       title: "Sistema de gestión de calidad",
       detail:
-        "Trazabilidad para producción artesanal de queso bajo las normas COFEPRIS NOM-243, NOM-251 y NOM-051. Setenta y tres endpoints que cubren recepción de leche, saneamiento, cadena de frío, inventario, distribución y retiro de mercado.",
+        "Trazabilidad para producción artesanal de queso bajo normas de sanidad del gobierno: desde que llega la leche hasta que el producto sale a la venta.",
     },
     "Solarity Paneles Solares": {
       title: "Desarrollador Full Stack",
       detail:
-        "Control de inventario y seguimiento de proyectos para un instalador de paneles solares. Las cuadrillas de campo se ubican con la API de Google Maps; todo se despliega por GitHub Actions.",
+        "Control de inventario y seguimiento de proyectos para una empresa de paneles solares en Aguascalientes, con las cuadrillas de campo ubicadas en tiempo real en un mapa.",
     },
     "Softweb Tecnologías": {
       title: "Consultor de IA",
       detail:
-        "Metí LLMs a flujos de trabajo empresariales usando MCP para orquestar servicios, más un agente que conecta una base de datos documental con las herramientas que un negocio realmente usa.",
+        "Construí un agente de recuperación de información (RAG) con un sistema de permisos complejo sobre la base de datos del cliente: lo que devuelve depende de si preguntas como empleado o como alguien externo.",
     },
     "RGM Advanced": {
       title: "Agente de IA para ventas",
       detail:
-        "Un agente que corre su embudo de ventas de principio a fin: califica leads entrantes, responde preguntas de producto, y transfiere a un humano en el momento exacto en que deja de ser útil.",
+        "Un agente de IA que atiende el embudo de ventas completo: responde preguntas, califica interesados, y pasa a un humano justo cuando hace falta.",
     },
   },
 };
-
-/**
- * La frase sobre concurrencia, calculada desde las fechas — no escrita a mano
- * por idioma, para que nunca se desincronice de `EXPERIENCE_BASE`.
- *
- * El dato que `L4Experience` existe para contar es que varios puestos
- * corrieron a la vez. Una frase lo dice sin que nadie tenga que descifrar un
- * eje.
- */
-const COUNT_WORDS: Record<Lang, readonly string[]> = {
-  en: ["No", "One", "Two", "Three", "Four", "Five", "Six"],
-  es: ["Ninguno", "Uno", "Dos", "Tres", "Cuatro", "Cinco", "Seis"],
-};
-
-function concurrencySentence(lang: Lang): string | null {
-  const span = monthsFromOrigin(TIMELINE_END);
-  const counts = Array.from({ length: span + 1 }, (_, i) =>
-    EXPERIENCE_BASE.filter((r) => {
-      const s = monthsFromOrigin(r.from);
-      const e = r.to ? monthsFromOrigin(r.to) : span;
-      return i >= s && i <= e;
-    }).length,
-  );
-
-  const peak = Math.max(...counts);
-  if (peak < 2) return null;
-
-  const from = counts.indexOf(peak);
-  let to = from;
-  while (to + 1 <= span && counts[to + 1] === peak) to++;
-
-  const word = COUNT_WORDS[lang][peak];
-  const a = monthLabelOffset(from, lang);
-  const b = monthLabelOffset(to, lang);
-  return lang === "es"
-    ? `${word} de ellos corrieron al mismo tiempo, entre ${a} y ${b}.`
-    : `${word} of them ran at the same time, between ${a} and ${b}.`;
-}
 
 /**
  * Nivel 10⁶ — lo que dirige.
  *
  * El nivel se encabeza con su papel, no con el nombre de la empresa: Fractal
- * queda como el sujeto de la frase y él como el actor. Los pilares dejaron de
- * ser el catálogo de la empresa —"Products · Services · Infrastructure"— para
- * ser el alcance de lo que él decide.
+ * queda como el sujeto de la frase y él como el actor.
+ *
+ * Antes había una lista de tres pilares (Arquitectura / Producto /
+ * Infraestructura). Se quitó: "Infraestructura" en realidad describía el
+ * stack de un solo producto (Tesseract, GCP/Cloud Run/IAM), no de Fractal
+ * como empresa, y el resto sonaba a taxonomía sin decir nada concreto. Un
+ * párrafo, apoyado en cómo Fractal se describe a sí misma en
+ * fractalops.com.mx, dice más con menos: automatización con IA para
+ * negocios, y su alcance como cofundador —que es más que "la parte
+ * técnica", cubre también hacia dónde va la empresa— sin reducirlo a un
+ * cargo.
  */
-const COMPANY_TEXT: Record<
-  Lang,
-  {
-    role: string;
-    body: string;
-    pillars: readonly { label: string; body: string }[];
-  }
-> = {
+const COMPANY_TEXT: Record<Lang, { role: string; body: string }> = {
   en: {
     role: "Co-founder & CEO",
-    body: "I co-founded Fractal in January 2025 and own the technical side from zero to production. I am the person who decides how it is built, and the person on call when it breaks.",
-    pillars: [
-      { label: "Architecture", body: "Every service, schema, and deployment boundary" },
-      { label: "Product", body: "What gets built, in what order, and what gets cut" },
-      { label: "Infrastructure", body: "GCP — Cloud Run, Cloud Storage, IAM" },
-    ],
+    body: "Fractal is the AI automation company I co-founded in January 2025. We help businesses get repetitive work off their plate — customer support, paperwork, content — so that time goes somewhere else. As co-founder, I run the business end to end: I decide what we build, how it gets built, and where the company goes.",
   },
   es: {
     role: "Cofundador y CEO",
-    body: "Cofundé Fractal en enero de 2025 y llevo el lado técnico de cero a producción. Soy quien decide cómo se construye, y quien responde cuando algo truena.",
-    pillars: [
-      { label: "Arquitectura", body: "Cada servicio, esquema, y frontera de despliegue" },
-      { label: "Producto", body: "Qué se construye, en qué orden, y qué se recorta" },
-      { label: "Infraestructura", body: "GCP — Cloud Run, Cloud Storage, IAM" },
-    ],
+    body: "Fractal es la empresa de automatización con inteligencia artificial que cofundé en enero de 2025. Ayudamos a negocios a quitarse de encima el trabajo repetitivo —atención a clientes, papeleo, contenido— para que ese tiempo se vaya a otra cosa. Como cofundador, llevo el negocio de principio a fin: decido qué construimos, cómo se construye, y hacia dónde va la empresa.",
   },
 };
 
@@ -617,13 +637,13 @@ const CONTACT_TEXT: Record<
   }
 > = {
   en: {
-    headline: "Back to a point of light.",
-    body: "If you have something that needs to hold state, route across models, and stay up — write to me.",
+    headline: "Let's talk.",
+    body: "If you have a project that needs to keep working long after launch — write to me.",
     linkLabels: { email: "Email", github: "GitHub", linkedin: "LinkedIn", fractal: "Fractal" },
   },
   es: {
-    headline: "De vuelta a un punto de luz.",
-    body: "Si tienes algo que necesita conservar estado, enrutar entre modelos, y seguir en pie — escríbeme.",
+    headline: "Hablemos.",
+    body: "Si tienes un proyecto que necesita seguir funcionando mucho después del lanzamiento — escríbeme.",
     linkLabels: { email: "Correo", github: "GitHub", linkedin: "LinkedIn", fractal: "Fractal" },
   },
 };
@@ -650,6 +670,10 @@ const UI_TEXT: Record<
     projectsHeading: string;
     experienceHeading: string;
     since: string;
+    softSkillsLabel: string;
+    certificationsLabel: string;
+    /** Texto del `<summary>` que expande el detalle técnico de un proyecto. */
+    seeTechnical: string;
     semantic: {
       about: string;
       technicalSkills: string;
@@ -673,6 +697,9 @@ const UI_TEXT: Record<
     projectsHeading: "Projects",
     experienceHeading: "Experience",
     since: "since",
+    softSkillsLabel: "Soft skills",
+    certificationsLabel: "Certifications",
+    seeTechnical: "Technical detail",
     semantic: {
       about: "About",
       technicalSkills: "Technical skills",
@@ -695,6 +722,9 @@ const UI_TEXT: Record<
     projectsHeading: "Proyectos",
     experienceHeading: "Experiencia",
     since: "desde",
+    softSkillsLabel: "Habilidades blandas",
+    certificationsLabel: "Certificaciones",
+    seeTechnical: "Detalle técnico",
     semantic: {
       about: "Sobre mí",
       technicalSkills: "Habilidades técnicas",
@@ -715,6 +745,17 @@ export function getContent(lang: Lang) {
     THESIS: THESIS[lang],
     DOMAINS: DOMAINS[lang],
     BIO: BIO[lang],
+    EDUCATION: {
+      school: SCHOOL,
+      degree: DEGREE[lang],
+      period: formatPeriod(EDUCATION_START, EDUCATION_END, lang),
+    },
+    LANGUAGE: LANGUAGE_LINE[lang],
+    SOFT_SKILLS: SOFT_SKILLS[lang],
+    CERTIFICATIONS: CERTIFICATIONS_BASE.map((c) => ({
+      ...c,
+      date: monthYear(c.ym, lang, false),
+    })),
     SKILL_GRAPH: SKILL_GRAPH_BASE.map((g) => ({
       groupKey: g.groupKey,
       group: SKILL_GROUP_LABELS[lang][g.groupKey],
@@ -726,7 +767,6 @@ export function getContent(lang: Lang) {
       ...EXPERIENCE_TEXT[lang][r.org],
       period: formatPeriod(r.from, r.to, lang),
     })),
-    EXPERIENCE_SENTENCE: concurrencySentence(lang),
     COMPANY: {
       name: IDENTITY.company,
       sinceLabel: monthYear(FRACTAL_FOUNDED, lang, true),

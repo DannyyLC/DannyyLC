@@ -35,7 +35,7 @@ const CARD_H = 225;
  * es todo lo que hay que entender para leer el nivel.
  */
 export default function L4Experience() {
-  const { EXPERIENCE, EXPERIENCE_SENTENCE, UI } = useContent();
+  const { EXPERIENCE, UI } = useContent();
   const viewport = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
 
@@ -90,11 +90,6 @@ export default function L4Experience() {
         <p className="font-mono text-sm tracking-[0.3em] text-ash-100 uppercase sm:text-base">
           {UI.experienceHeading}
         </p>
-        {EXPERIENCE_SENTENCE && (
-          <p className="mx-auto mt-3 max-w-lg text-sm text-ash-300">
-            {EXPERIENCE_SENTENCE}
-          </p>
-        )}
       </div>
 
       <div ref={viewport} className="overflow-hidden">
