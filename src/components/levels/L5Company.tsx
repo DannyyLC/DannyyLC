@@ -38,16 +38,6 @@ export default function L5Company({ active }: { active?: boolean }) {
             {COMPANY.body}
           </p>
 
-          <ul className="mt-6 space-y-2">
-            {COMPANY.pillars.map((p) => (
-              <li key={p.label} className="flex gap-3 text-xs">
-                <span className="mt-[0.4rem] h-1 w-1 shrink-0 rotate-45 bg-white/50" />
-                <span className="font-mono text-ash-200">{p.label}</span>
-                <span className="text-ash-400">{p.body}</span>
-              </li>
-            ))}
-          </ul>
-
           <a
             href={COMPANY.url}
             target="_blank"

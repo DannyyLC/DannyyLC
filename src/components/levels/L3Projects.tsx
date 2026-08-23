@@ -96,6 +96,8 @@ export default function L3Projects() {
 }
 
 function ProjectCard({ project }: { project: Content["PROJECTS"][number] }) {
+  const { UI } = useContent();
+
   return (
     // Ancho relativo al viewport, no fijo. Con 320px fijos las cinco tarjetas
     // caben enteras en un monitor de 1920 y la distancia a recorrer sale 0: la
@@ -127,7 +129,20 @@ function ProjectCard({ project }: { project: Content["PROJECTS"][number] }) {
         {project.detail}
       </p>
 
-      <p className="mt-6 font-mono text-[0.6rem] leading-relaxed text-ash-400">
+      {/* Capa técnica opcional: la prosa de arriba se queda general a
+          propósito, esto es para quien sí quiere el nivel de ingeniería.
+          `<details>` nativo — sin JS a la medida, abre/cierra por sí solo. */}
+      <details className="group mt-4 border-t border-white/10 pt-3">
+        <summary className="cursor-pointer font-mono text-[0.6rem] tracking-widest text-ash-400 uppercase transition-colors hover:text-white [&::-webkit-details-marker]:hidden">
+          <span className="mr-1.5 inline-block transition-transform group-open:rotate-90">
+            ▸
+          </span>
+          {UI.seeTechnical}
+        </summary>
+        <p className="mt-3 text-xs leading-relaxed text-ash-300">{project.technical}</p>
+      </details>
+
+      <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-ash-400">
         {project.stack.join(" · ")}
       </p>
 
