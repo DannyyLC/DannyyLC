@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Lenis from "lenis";
 import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/gsap";
+import { setLenis } from "@/lib/lenis";
 
 /**
  * Smooth-scroll con Lenis, sincronizado con el ticker de GSAP.
@@ -38,9 +39,14 @@ export default function SmoothScrollProvider() {
     // en scroll interpolado se ve como un salto. Se desactiva.
     gsap.ticker.lagSmoothing(0);
 
+    // Publicada para que `NavMenu` pueda animar un salto de sección con
+    // `lenis.scrollTo(...)` sin instanciar un segundo Lenis. Ver `lib/lenis.ts`.
+    setLenis(lenis);
+
     return () => {
       gsap.ticker.remove(raf);
       gsap.ticker.lagSmoothing(500, 33);
+      setLenis(null);
       lenis.destroy();
     };
   }, []);

@@ -674,6 +674,10 @@ const UI_TEXT: Record<
     certificationsLabel: string;
     /** Texto del `<summary>` que expande el detalle técnico de un proyecto. */
     seeTechnical: string;
+    /** `aria-label` del `<nav>` que envuelve el menú de secciones. */
+    navLabel: string;
+    /** `aria-label` del botón que abre/cierra el menú — el texto visible es el nivel activo. */
+    navToggle: string;
     semantic: {
       about: string;
       technicalSkills: string;
@@ -700,6 +704,8 @@ const UI_TEXT: Record<
     softSkillsLabel: "Soft skills",
     certificationsLabel: "Certifications",
     seeTechnical: "Technical detail",
+    navLabel: "Section navigation",
+    navToggle: "Open section menu",
     semantic: {
       about: "About",
       technicalSkills: "Technical skills",
@@ -725,6 +731,8 @@ const UI_TEXT: Record<
     softSkillsLabel: "Habilidades blandas",
     certificationsLabel: "Certificaciones",
     seeTechnical: "Detalle técnico",
+    navLabel: "Navegación de secciones",
+    navToggle: "Abrir menú de secciones",
     semantic: {
       about: "Sobre mí",
       technicalSkills: "Habilidades técnicas",

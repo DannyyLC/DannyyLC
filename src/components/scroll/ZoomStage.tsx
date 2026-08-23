@@ -3,6 +3,8 @@
 import { useMemo, useRef, useState, type ComponentType } from "react";
 import { ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import ScaleHUD, { type DialHandle } from "@/components/ui/ScaleHUD";
+import NavMenu from "@/components/ui/NavMenu";
+import { getLenis } from "@/lib/lenis";
 import { useContent } from "@/lib/i18n";
 import type { LevelKey } from "@/lib/content";
 
@@ -63,6 +65,18 @@ function buildSegments(levels: Level[]): { segments: Segment[]; total: number } 
 }
 
 /**
+ * En qué `t` (misma unidad que `Segment.start`) arranca el nivel `i`, con
+ * `local = 0` si tiene estancia. Es la misma suma que arma `buildSegments`,
+ * cortada antes de `i` — se usa para que `NavMenu` sepa a qué progreso de
+ * scroll saltar, sin mantener una segunda tabla que se pueda desincronizar.
+ */
+function levelStart(levels: Level[], i: number): number {
+  let start = 0;
+  for (let j = 0; j < i; j++) start += (levels[j].dwell ?? 0) + 1;
+  return start;
+}
+
+/**
  * Factor de zoom entre un nivel y el siguiente.
  *
  * Con 6, un nivel entra en cuadro ocupando ~6× la pantalla (recortado, se
@@ -118,6 +132,36 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   const [reduced, setReduced] = useState(false);
 
   const { segments, total } = useMemo(() => buildSegments(levels), [levels]);
+
+  /**
+   * Salto animado a un nivel, para `NavMenu`. Reutiliza el mismo mapeo
+   * progreso→scroll que ya usa `ScrollTrigger` (`start:"top top", end:"bottom
+   * bottom"` sobre `root`): `scrollY = root.offsetTop + progress *
+   * (root.offsetHeight - innerHeight)`. Al llamar `lenis.scrollTo`, Lenis
+   * emite `"scroll"` durante todo el tween, que ya alimenta
+   * `ScrollTrigger.update` → `apply()` — el zoom pasa visiblemente por cada
+   * nivel intermedio, igual que con scroll orgánico, sin tocar `draw()`.
+   */
+  const scrollToLevel = (i: number) => {
+    const lenis = getLenis();
+    const r = root.current;
+    if (!lenis || !r || total === 0) return;
+
+    const progress = levelStart(levels, i) / total;
+    const y = r.offsetTop + progress * (r.offsetHeight - window.innerHeight);
+
+    // Más lejos, más tiempo — para que el paso por los niveles intermedios
+    // alcance a sentirse y no sea un corte.
+    const distance = Math.abs(active - i);
+    const duration = Math.min(2.4, Math.max(1, 0.5 + distance * 0.3));
+
+    lenis.scrollTo(y, { duration, easing: (t: number) => 1 - (1 - t) ** 3 });
+  };
+
+  /** Equivalente sin Lenis/GSAP para el fallback de `prefers-reduced-motion`. */
+  const scrollToSection = (i: number) => {
+    document.getElementById(`level-${levels[i].key}`)?.scrollIntoView({ behavior: "auto" });
+  };
 
   useGSAP(
     () => {
@@ -264,18 +308,21 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   // Fallback sin movimiento: un documento normal.
   if (reduced) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-32 px-6 py-32">
-        {levels.map(({ exp, key, Component }) => (
-          <section key={exp} aria-label={UI.levelLabels[key]}>
-            {/* Sin el exponente: fuera del zoom la escala no significa nada.
-                El nombre sí sirve de encabezado en el documento apilado. */}
-            <p className="mb-8 font-mono text-xs tracking-[0.2em] text-ash-300 uppercase">
-              {UI.levelLabels[key]}
-            </p>
-            <Component />
-          </section>
-        ))}
-      </div>
+      <>
+        <NavMenu levels={levels} active={null} onSelect={scrollToSection} />
+        <div className="mx-auto flex max-w-3xl flex-col gap-32 px-6 py-32">
+          {levels.map(({ exp, key, Component }) => (
+            <section key={exp} id={`level-${key}`} aria-label={UI.levelLabels[key]}>
+              {/* Sin el exponente: fuera del zoom la escala no significa nada.
+                  El nombre sí sirve de encabezado en el documento apilado. */}
+              <p className="mb-8 font-mono text-xs tracking-[0.2em] text-ash-300 uppercase">
+                {UI.levelLabels[key]}
+              </p>
+              <Component />
+            </section>
+          ))}
+        </div>
+      </>
     );
   }
 
@@ -303,6 +350,7 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
       </div>
 
       <ScaleHUD ref={dial} levels={levels} active={active} />
+      <NavMenu levels={levels} active={active} onSelect={scrollToLevel} />
     </div>
   );
 }
