@@ -13,10 +13,13 @@ import L6Contact from "@/components/levels/L6Contact";
 /**
  * Los siete niveles del zoom, del más pequeño al más grande.
  *
- * El orden es la historia: un caret → una línea → un stack → lo que construyó →
- * para quién lo hizo → la compañía que dirige → un punto. Reordenarlos rompe la
- * premisa, porque cada nivel tiene que ser plausiblemente el contexto del
- * anterior.
+ * El orden era la historia: un caret → una línea → un stack → lo que
+ * construyó → para quién lo hizo → la compañía que dirige → un punto, cada
+ * nivel plausiblemente el contexto del anterior. Se cambió por orden de
+ * importancia (ver el comentario de `LEVELS`): la premisa del zoom sobrevive
+ * porque lo que la vende es la mecánica —capas que comparten centro y marcos
+ * que encogen—, no que el stack contenga literalmente a los proyectos. Lo que
+ * no se mueve son los extremos: el caret abre y el punto cierra.
  *
  * Hubo un nivel de "territorio" entre la compañía y el cierre. Era el único que
  * no decía nada profesional —contestaba "¿dónde vives?"— y amortiguaba el
@@ -34,18 +37,29 @@ import L6Contact from "@/components/levels/L6Contact";
  * de servidor a cliente. Así `page.tsx` sigue siendo Server Component y la
  * versión semántica del sitio se renderiza en el servidor.
  */
+/*
+ * El orden va de lo más importante a lo menos, porque quien llega con prisa
+ * —un reclutador con treinta segundos— lee los primeros niveles y se va.
+ * Proyectos y experiencia suben justo detrás de "sobre mí", y el stack baja al
+ * final: el muro de logos era lo primero que se veía después de la cara, y es
+ * lo que menos dice de alguien. Los números de archivo (`L2Skills`, `L3Projects`…)
+ * son del orden anterior; el orden vale lo que dice esta lista.
+ *
+ * `exp` sigue a la posición, no al componente: el dial y el HUD lo leen como
+ * "a qué escala estás", y tiene que crecer de uno en uno de arriba abajo.
+ */
 const LEVELS: Level[] = [
   { exp: -1, key: "intro", Component: L0Cursor },
   { exp: 0, key: "about", Component: L1Line },
-  { exp: 1, key: "stack", Component: L2Skills },
-  // El único nivel con estancia: el zoom se detiene y ese tramo se gasta
-  // cruzando la pista de proyectos en horizontal.
-  { exp: 2, key: "projects", dwell: 1.5, Component: L3Projects },
+  // Primera estancia: el zoom se detiene y ese tramo se gasta cruzando la
+  // pista de proyectos en horizontal.
+  { exp: 1, key: "projects", dwell: 1.5, Component: L3Projects },
   // Segunda estancia: la línea de tiempo se recorre en horizontal, igual que
   // proyectos, pero la lectura es otra — allá se pasa una lista, aquí se
   // atraviesa el tiempo y las barras se quedan quietas mientras corre la rejilla.
-  { exp: 3, key: "experience", dwell: 1.5, Component: L4Experience },
-  { exp: 4, key: "company", Component: L5Company },
+  { exp: 2, key: "experience", dwell: 1.5, Component: L4Experience },
+  { exp: 3, key: "company", Component: L5Company },
+  { exp: 4, key: "stack", Component: L2Skills },
   { exp: 5, key: "contact", Component: L6Contact },
 ];
 

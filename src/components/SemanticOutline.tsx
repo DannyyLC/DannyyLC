@@ -63,13 +63,6 @@ export default function SemanticOutline() {
         </p>
       ))}
 
-      <h2>{UI.semantic.technicalSkills}</h2>
-      {SKILL_GRAPH.map((branch) => (
-        <p key={branch.groupKey}>
-          <strong>{branch.group}:</strong> {branch.items.join(", ")}
-        </p>
-      ))}
-
       <h2>{UI.semantic.projects}</h2>
       {PROJECTS.map((p) => (
         <section key={p.name}>
@@ -153,6 +146,13 @@ export default function SemanticOutline() {
       <p>
         <a href={COMPANY.url}>{COMPANY.domain}</a>
       </p>
+
+      <h2>{UI.semantic.technicalSkills}</h2>
+      {SKILL_GRAPH.map((branch) => (
+        <p key={branch.groupKey}>
+          <strong>{branch.group}:</strong> {branch.items.join(", ")}
+        </p>
+      ))}
 
       <h2>{UI.semantic.contact}</h2>
       <p>{CONTACT.body}</p>

@@ -149,12 +149,12 @@ const DOMAINS: Record<Lang, readonly string[]> = {
 };
 
 /**
- * Nivel 10⁰ — qué sabe hacer.
+ * Nivel `about` — qué sabe hacer.
  *
  * Este nivel es sobre capacidad, no sobre cargos. La versión anterior dedicaba
  * dos de tres párrafos a Fractal, y un portafolio que dice "CEO" tres veces se
  * puede sustituir por un nombre en el landing de la empresa. Que es fundador se
- * cuenta en 10⁶, una sola vez, donde toca.
+ * cuenta en `company`, una sola vez, donde toca.
  *
  * Cada afirmación aquí está respaldada por algo verificable en `PROJECTS`,
  * `EXPERIENCE` o el 8.9% de la investigación. Nada de adjetivos sin evidencia
@@ -176,7 +176,7 @@ const BIO: Record<Lang, readonly string[]> = {
 /**
  * Formación, idioma, habilidades blandas y certificaciones.
  *
- * Viven en `about` (10⁰), junto a la bio — son datos personales, no técnicos,
+ * Viven en `about`, junto a la bio — son datos personales, no técnicos,
  * así que no tenía sentido meterlos en `stack`. `EDUCATION.period` sale de
  * las mismas fechas que usa el resto del sitio para no escribir el rango a
  * mano; la escuela y la carrera sí son nombres propios y no se traducen salvo
@@ -234,7 +234,7 @@ const CERTIFICATIONS_BASE: readonly {
 ];
 
 /**
- * Nivel 10¹ — el stack.
+ * Nivel `stack`.
  *
  * Fuera quedaron "REST" y "CI/CD": no son tecnologías, son un estilo de API y
  * una práctica, y listarlas junto a Postgres o Docker le resta seriedad al
@@ -654,7 +654,7 @@ const EXPERIENCE_TEXT: Record<Lang, Record<Org, RoleText>> = {
 };
 
 /**
- * Nivel 10⁶ — lo que dirige.
+ * Nivel `company` — lo que dirige.
  *
  * El nivel se encabeza con su papel, no con el nombre de la empresa: Fractal
  * queda como el sujeto de la frase y él como el actor.
