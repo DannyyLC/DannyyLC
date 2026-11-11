@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useContent } from "@/lib/i18n";
+import { useTilt } from "@/lib/tilt";
 
 /** Ancho de una tarjeta. */
 const CARD = 360;
@@ -38,6 +39,8 @@ export default function L4Experience() {
   const { EXPERIENCE, UI } = useContent();
   const viewport = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
+
+  useTilt(track);
 
   // La línea corre del más antiguo al más reciente. `EXPERIENCE` está en
   // orden inverso, que es como se lee un CV y como lo sirve la capa
@@ -138,7 +141,8 @@ export default function L4Experience() {
                 />
 
                 <article
-                  className="absolute border border-white/15 bg-black p-5 transition-colors duration-500 hover:border-white/35"
+                  data-tilt
+                  className="tilt absolute border border-white/15 bg-black p-5 transition-colors duration-500 hover:border-white/35"
                   style={{
                     left: x - CARD / 2,
                     width: CARD,

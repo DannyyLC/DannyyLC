@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useContent } from "@/lib/i18n";
 import type { Content } from "@/lib/content";
+import { useTilt } from "@/lib/tilt";
 
 /**
  * Proyectos — pista horizontal.
@@ -22,6 +23,8 @@ export default function L3Projects() {
   const { PROJECTS, UI } = useContent();
   const viewport = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
+
+  useTilt(track);
 
   useEffect(() => {
     const v = viewport.current;
@@ -46,10 +49,13 @@ export default function L3Projects() {
       t.style.paddingLeft = `${pad}px`;
       t.style.paddingRight = `${pad}px`;
 
-      // Después de escribir el relleno: cambia `scrollWidth`.
+      // La distancia sale de la aritmética —`(N-1) × (tarjeta + hueco)`— y no
+      // de `scrollWidth`: las tarjetas ahora llevan transform 3D, y una
+      // transform en un hijo cambia el área desbordable que mide `scrollWidth`.
+      const step = (first?.offsetWidth ?? 0) + (parseFloat(getComputedStyle(t).columnGap) || 0);
       v.style.setProperty(
         "--track-distance",
-        `${Math.max(0, t.scrollWidth - v.clientWidth)}px`,
+        `${Math.max(0, (t.children.length - 1) * step)}px`,
       );
     };
 
@@ -74,10 +80,11 @@ export default function L3Projects() {
           style={{
             transform:
               "translate3d(calc(var(--local, 0) * var(--track-distance, 0px) * -1), 0, 0)",
+            ["--n1" as string]: PROJECTS.length - 1,
           }}
         >
-          {PROJECTS.map((p) => (
-            <ProjectCard key={p.name} project={p} />
+          {PROJECTS.map((p, i) => (
+            <ProjectCard key={p.name} project={p} index={i} />
           ))}
         </div>
       </div>
@@ -95,7 +102,13 @@ export default function L3Projects() {
   );
 }
 
-function ProjectCard({ project }: { project: Content["PROJECTS"][number] }) {
+function ProjectCard({
+  project,
+  index,
+}: {
+  project: Content["PROJECTS"][number];
+  index: number;
+}) {
   const { UI } = useContent();
 
   return (
@@ -103,9 +116,18 @@ function ProjectCard({ project }: { project: Content["PROJECTS"][number] }) {
     // caben enteras en un monitor de 1920 y la distancia a recorrer sale 0: la
     // estancia se convertiría en pantalla y media de scroll sin que nada se
     // mueva. A 28vw las cinco suman 140vw y siempre sobra pista que cruzar.
+    //
+    // Dos elementos y no uno porque llevan dos transforms distintas: el de
+    // fuera gira con la pista (`coverflow-item`, según su distancia al centro)
+    // y el de dentro se inclina con el cursor (`tilt`). En uno solo, la
+    // segunda pisaría a la primera.
+    <div
+      className="coverflow-item flex shrink-0"
+      style={{ width: "max(18rem, 28vw)", ["--i" as string]: index }}
+    >
     <article
-      className="flex shrink-0 flex-col border border-white/12 p-6 transition-colors duration-500 hover:border-white/30"
-      style={{ width: "max(18rem, 28vw)" }}
+      data-tilt
+      className="tilt relative flex w-full flex-col border border-white/12 bg-black p-6 transition-colors duration-500 hover:border-white/30"
     >
       <h3 className="font-mono text-base text-white">{project.name}</h3>
 
@@ -163,5 +185,6 @@ function ProjectCard({ project }: { project: Content["PROJECTS"][number] }) {
         </a>
       )}
     </article>
+    </div>
   );
 }

@@ -93,9 +93,24 @@ export default function L6Contact({ active }: { active?: boolean }) {
           se ve y a medida normal quedaba flotando en mucho negro. */}
       <LevelShell frame={false} centered wide>
         <div className="flex flex-col items-center text-center">
-          <span className="h-2.5 w-2.5 rotate-45 bg-white shadow-[0_0_28px_rgba(255,255,255,0.9)]" />
+          {/* `data-zoom-point`: `ZoomStage` mide este punto y hace colapsar el
+              polvo en él durante el último tramo. La sombra fija es el estado
+              de reposo; `point-breathe` la anima cuando hay movimiento. */}
+          <span
+            data-zoom-point
+            className="point-breathe h-2.5 w-2.5 rotate-45 bg-white shadow-[0_0_28px_rgba(255,255,255,0.9)]"
+          />
 
-          <h2 className="mt-14 text-3xl leading-tight text-white sm:text-5xl">
+          {/* Iluminado desde el punto: blanco arriba al centro, cae a gris
+              hacia los lados y abajo. Va como degradado recortado al texto y
+              no como halo detrás, porque un halo levantaría el negro. */}
+          <h2
+            className="lit-breathe mt-14 bg-clip-text text-3xl leading-tight text-transparent sm:text-5xl"
+            style={{
+              backgroundImage:
+                "radial-gradient(ellipse 60% 150% at 50% -45%, #ffffff 35%, #8c8c8c 100%)",
+            }}
+          >
             {CONTACT.headline}
           </h2>
 

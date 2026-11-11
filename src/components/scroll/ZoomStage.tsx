@@ -4,6 +4,8 @@ import { useMemo, useRef, useState, type ComponentType } from "react";
 import { ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import ScaleHUD, { type DialHandle } from "@/components/ui/ScaleHUD";
 import NavMenu from "@/components/ui/NavMenu";
+import DepthDust, { type DustHandle } from "@/components/ui/DepthDust";
+import { subscribePointer } from "@/lib/pointer";
 import { getLenis } from "@/lib/lenis";
 import { useContent } from "@/lib/i18n";
 import type { LevelKey } from "@/lib/content";
@@ -100,6 +102,30 @@ const OUT_SPAN = 0.8;
 /** Fuera de esta ventana un nivel no se toca ni se pinta. */
 const CULL = 2;
 
+/**
+ * Cuánto desplaza el cursor el punto de fuga, en px, de centro a borde.
+ *
+ * Es la misma proyección que daría `perspective` + `translateZ` moviendo el
+ * `perspective-origin`, escrita a mano: una capa a escala `s` se corre
+ * `o × (1 − s)`. La que se está leyendo (s = 1) no se mueve nada; la que sale
+ * sigue al cursor y la que entra va al revés, y eso las despega en profundidad.
+ * Se hace con `translate` + `scale` y no con 3D real para no cambiar el camino
+ * de rasterizado del texto, que a escala 6 es lo más frágil del sitio.
+ */
+const PARALLAX = 28;
+
+/**
+ * Desenfoque máximo de un nivel que sale, en px de pantalla.
+ *
+ * Solo el que sale: el que entra tiene que poder leerse en cuanto asoma. Poner
+ * esto en 0 apaga el efecto entero, que es lo primero que hay que probar si el
+ * zoom pierde frames — `filter` sobre una capa a pantalla completa es lo más
+ * caro de pintar que hay aquí.
+ */
+const BLUR_MAX = 5;
+/** Tope en px locales: el filtro se aplica antes de la escala y hay que compensarla. */
+const BLUR_LOCAL_CAP = 16;
+
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
 const smoothstep = (n: number) => n * n * (3 - 2 * n);
 
@@ -127,6 +153,7 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   const viewport = useRef<HTMLDivElement>(null);
   const layers = useRef<(HTMLDivElement | null)[]>([]);
   const dial = useRef<DialHandle>(null);
+  const dust = useRef<DustHandle>(null);
 
   const [active, setActive] = useState(0);
   const [reduced, setReduced] = useState(false);
@@ -188,8 +215,46 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
       // Último `--local` escrito por capa, para no repetir el write cuando no
       // cambia — que es el caso de todas las capas menos la de la estancia.
       const lastLocal = els.map(() => Number.NaN);
+      // Último desenfoque escrito por capa, por la misma razón.
+      const lastBlur = els.map(() => 0);
+
+      // Desplazamiento del punto de fuga por el cursor, en px.
+      let ox = 0;
+      let oy = 0;
+
+      // El punto de luz del cierre: hacia ahí colapsa el polvo al final.
+      const point = root.current?.querySelector<HTMLElement>("[data-zoom-point]");
+
+      /**
+       * Centro del punto en coordenadas del escenario, con su capa a escala 1.
+       *
+       * Por la cadena de `offsetParent` y no con `getBoundingClientRect`: los
+       * offsets ignoran las transforms, y la capa casi siempre está escalada
+       * cuando esto se pregunta.
+       */
+      const measurePoint = (): [number, number] => {
+        const stage = viewport.current;
+        if (!point || !stage) return [Number.NaN, Number.NaN];
+        let x = point.offsetWidth / 2;
+        let y = point.offsetHeight / 2;
+        let el: HTMLElement | null = point;
+        while (el && el !== stage) {
+          x += el.offsetLeft;
+          y += el.offsetTop;
+          el = el.offsetParent as HTMLElement | null;
+        }
+        return [x, y];
+      };
 
       const draw = (p: number, dwellLevel: number, local: number) => {
+        // Último tramo del recorrido, 0 → 1. Solo ahí hace falta saber dónde
+        // está el punto, y se mide en el momento: el titular cambia de alto
+        // con el idioma y el punto se mueve con él.
+        const finale = clamp01(p - (els.length - 2));
+        const [tx, ty] =
+          finale > 0 ? measurePoint() : [Number.NaN, Number.NaN];
+        dust.current?.update({ p, k: K, ox, oy, finale, tx, ty });
+
         for (let i = 0; i < els.length; i++) {
           const d = i - p;
 
@@ -204,11 +269,31 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
 
           if (!painted[i]) {
             els[i].style.visibility = "visible";
-            els[i].style.willChange = "transform, opacity";
+            els[i].style.willChange = "transform, opacity, filter";
             painted[i] = true;
           }
 
-          els[i].style.transform = `scale(${K ** d})`;
+          const s = K ** d;
+          els[i].style.transform =
+            ox !== 0 || oy !== 0
+              ? `translate(${(ox * (1 - s)).toFixed(2)}px, ${(oy * (1 - s)).toFixed(2)}px) scale(${s})`
+              : `scale(${s})`;
+
+          // Profundidad de campo: el nivel que sale se desenfoca además de
+          // apagarse, como una lente que cambia de foco. El filtro se aplica
+          // antes de la escala, así que se divide entre ella para que el
+          // desenfoque en pantalla sea el que dice `BLUR_MAX`.
+          //
+          // Pasado `OUT_SPAN` la capa ya es invisible y el filtro se quita: un
+          // desenfoque sobre algo con opacidad 0 se paga igual y no se ve.
+          const screenBlur =
+            d < 0 && -d < OUT_SPAN ? (-d / OUT_SPAN) * BLUR_MAX : 0;
+          const blur =
+            Math.round(Math.min(BLUR_LOCAL_CAP, screenBlur / s) * 10) / 10;
+          if (lastBlur[i] !== blur) {
+            els[i].style.filter = blur > 0 ? `blur(${blur}px)` : "none";
+            lastBlur[i] = blur;
+          }
 
           // Las dos direcciones no usan la misma curva. El que entra sube con
           // smoothstep, que arranca suave y no aparece de golpe. El que sale
@@ -247,6 +332,12 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
        * arranque: el navegador restaura el scroll al recargar, así que la
        * página puede nacer a la mitad del recorrido.
        */
+      // Lo último que se pintó, para repintar cuando lo que cambia es el cursor
+      // y no el scroll.
+      let lastP = 0;
+      let lastDwell = -1;
+      let lastLocalValue = 0;
+
       const apply = (progress: number) => {
         // Se recorre la lista de tramos hasta encontrar dónde cae el scroll.
         // Son menos de una docena, así que un barrido lineal por frame es más
@@ -270,6 +361,9 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
           break;
         }
 
+        lastP = p;
+        lastDwell = dwellLevel;
+        lastLocalValue = local;
         draw(p, dwellLevel, local);
 
         // El dial exterior sigue la posición del zoom y el interior el scroll
@@ -300,7 +394,18 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
       // scroll abajo.
       apply(st.progress);
 
-      return () => st.kill();
+      // Después del pintado inicial: la suscripción llama de inmediato con la
+      // posición actual del cursor, y `draw` necesita una `p` real que repintar.
+      const unsubscribe = subscribePointer((x, y) => {
+        ox = x * PARALLAX;
+        oy = y * PARALLAX;
+        draw(lastP, lastDwell, lastLocalValue);
+      });
+
+      return () => {
+        unsubscribe();
+        st.kill();
+      };
     },
     { scope: root, dependencies: [levels.length, segments, total] },
   );
@@ -335,6 +440,9 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
         // también existe apilado para lectores de pantalla (ver `page.tsx`).
         aria-hidden="true"
       >
+        {/* Detrás de todas las capas: va primero en el DOM. */}
+        <DepthDust ref={dust} />
+
         {levels.map(({ exp, Component }, i) => (
           <div
             key={exp}

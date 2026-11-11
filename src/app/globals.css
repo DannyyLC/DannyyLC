@@ -121,6 +121,97 @@ html.lenis body {
   }
 }
 
+/* ── Profundidad ──────────────────────────────────────────────────────
+   Todo lo de este bloque es movimiento añadido, así que vive entero detrás de
+   `no-preference`: bajo reduced-motion las tarjetas quedan planas y quietas
+   sin tener que neutralizar nada después. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Tarjeta que se inclina hacia el cursor. `useTilt` escribe las variables.
+     La transición es corta mientras el cursor está encima —para que siga al
+     cursor sin temblar— y larga al soltarla, para que vuelva con calma.
+     Declara también `border-color` porque esta regla, sin capa, le gana al
+     `transition-colors` de Tailwind y si no el borde cambiaría de golpe. */
+  .tilt {
+    transform: perspective(900px) rotateX(calc(var(--rx, 0) * 1deg))
+      rotateY(calc(var(--ry, 0) * 1deg));
+    transition:
+      transform 0.6s var(--ease-out-expo),
+      border-color 0.5s;
+  }
+
+  .tilt[data-tilting] {
+    transition-duration: 0.15s, 0.5s;
+  }
+
+  /* El brillo bajo el cursor. Es local a la tarjeta y solo existe en hover:
+     el negro del sitio no se toca. */
+  .tilt::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      22rem circle at var(--mx, 50%) var(--my, 50%),
+      rgba(255, 255, 255, 0.07),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .tilt[data-tilting]::after {
+    opacity: 1;
+  }
+
+  /* Pista en arco. Cada tarjeta lleva su índice en `--i` y la pista el último
+     índice en `--n1`; con el `--local` que escribe `ZoomStage`, `--u` es la
+     distancia de la tarjeta al centro medida en tarjetas: 0 es la que se lee.
+     Las laterales giran hacia el centro, se alejan y se apagan. El giro tiene
+     tope: más de ~17° y el texto de las laterales deja de leerse. */
+  .coverflow-item {
+    --u: calc(var(--i) - var(--local, 0) * var(--n1));
+    --au: min(max(var(--u), -1 * var(--u)), 2);
+    transform: perspective(1400px)
+      rotateY(calc(clamp(-1.3, var(--u), 1.3) * -13deg))
+      translateZ(calc(var(--au) * -90px));
+    opacity: calc(1 - var(--au) * 0.28);
+  }
+
+  /* El punto de luz del cierre, respirando. El titular respira con él, al
+     mismo ritmo: es lo que hace que se lea como iluminado por el punto. */
+  .point-breathe {
+    animation: point-breathe 4.2s ease-in-out infinite;
+  }
+
+  .lit-breathe {
+    animation: lit-breathe 4.2s ease-in-out infinite;
+  }
+}
+
+@keyframes point-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 22px rgba(255, 255, 255, 0.75),
+      0 0 60px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 36px rgba(255, 255, 255, 1),
+      0 0 110px rgba(255, 255, 255, 0.26);
+  }
+}
+
+@keyframes lit-breathe {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* ── Accesibilidad ────────────────────────────────────────────────────
    El zoom es el sitio entero, así que bajo reduced-motion no se "suaviza":
    se desmonta y el contenido se apila como un documento normal. Eso lo
