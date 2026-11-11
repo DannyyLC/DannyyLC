@@ -1,6 +1,8 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { gsap } from "@/lib/gsap";
+import { onIntroDone } from "@/lib/intro";
 import type { Level } from "@/components/scroll/ZoomStage";
 import { useContent } from "@/lib/i18n";
 
@@ -28,6 +30,8 @@ const MINOR_IN = 344;
 const MINOR_OUT = 356;
 const RIM_INNER = 340;
 const INDEX_R = 410;
+/** Dónde va grabado el exponente de cada marca, por fuera del canto. */
+const LABEL_R = 407;
 
 /** Grados entre un nivel y el siguiente en el anillo exterior. */
 const STEP = 7;
@@ -78,6 +82,24 @@ function tick(rIn: number, rOut: number, deg: number) {
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
 
 /**
+ * Calibración de arranque: cuánto giran de más los anillos antes de asentarse.
+ *
+ * Giran en sentidos opuestos y el fino mucho más, por la misma razón que
+ * `MINOR_SWEEP` no es múltiplo de `STEP`: dos ruedas, no una pieza.
+ */
+const CAL_MAJOR = 34;
+const CAL_MINOR = -120;
+const CAL_SECONDS = 1.6;
+
+/** Opacidad del anillo fino en reposo y a toda velocidad. */
+const MINOR_REST = 0.3;
+const MINOR_FAST = 0.9;
+/** Fracción del recorrido por segundo a la que el anillo ya está a tope. */
+const FAST_SPEED = 0.22;
+/** Cuánto conserva el brillo de un frame al siguiente, a 60 fps. */
+const GLOW_DECAY = 0.9;
+
+/**
  * El indicador de escala: un dial analógico que gira con el scroll.
  *
  * Antes era una línea recta con puntos. Funcionaba como referencia, pero no
@@ -100,37 +122,150 @@ const ScaleHUD = forwardRef<DialHandle, { levels: Level[]; active: number }>(
     const major = useRef<SVGGElement>(null);
     const minor = useRef<SVGGElement>(null);
     const marks = useRef<(SVGLineElement | null)[]>([]);
+    const engraved = useRef<(SVGTextElement | null)[]>([]);
+    const shell = useRef<HTMLDivElement>(null);
 
-    useImperativeHandle(ref, () => ({
-      update(p, progress) {
-        // Girar el grupo entero es un solo write de atributo. Colocar cada
-        // marca por separado serían ocho, y el resultado en pantalla es idéntico.
-        major.current?.setAttribute(
-          "transform",
-          `rotate(${-p * STEP} ${CX} ${CY})`,
-        );
-        minor.current?.setAttribute(
-          "transform",
-          `rotate(${-progress * MINOR_SWEEP} ${CX} ${CY})`,
-        );
+    /**
+     * Todo lo que decide cómo se ve el dial, en un solo sitio.
+     *
+     * `p` y `progress` vienen del scroll. `cal` y `glow` son lo único con
+     * tiempo propio: `cal` va de 1 a 0 una vez, al calibrarse, y `glow` sube
+     * con la velocidad y decae solo. Los dos se SUMAN a lo que dice el scroll
+     * y terminan en cero, así que en reposo el dial es exactamente la posición
+     * del scroll — no hay estado que pueda quedarse desincronizado.
+     */
+    const state = useRef({
+      p: 0,
+      progress: 0,
+      cal: 1,
+      glow: 0,
+      lastProgress: Number.NaN,
+      lastTime: 0,
+      decaying: false,
+    });
+
+    const render = () => {
+      const s = state.current;
+      const count = marks.current.length;
+
+      // Girar el grupo entero es un solo write de atributo. Colocar cada
+      // marca por separado serían ocho, y el resultado en pantalla es idéntico.
+      major.current?.setAttribute(
+        "transform",
+        `rotate(${-s.p * STEP + s.cal * CAL_MAJOR} ${CX} ${CY})`,
+      );
+      minor.current?.setAttribute(
+        "transform",
+        `rotate(${-s.progress * MINOR_SWEEP + s.cal * CAL_MINOR} ${CX} ${CY})`,
+      );
+
+      // El anillo fino se enciende y engrosa con la velocidad del scroll.
+      minor.current?.setAttribute(
+        "stroke-opacity",
+        (MINOR_REST + (MINOR_FAST - MINOR_REST) * s.glow).toFixed(3),
+      );
+      minor.current?.setAttribute("stroke-width", (1 + 0.7 * s.glow).toFixed(2));
+
+      for (let i = 0; i < count; i++) {
+        const d = Math.abs(i - s.p);
+
+        // Durante la calibración las marcas se encienden una por una, de la
+        // primera a la última, en vez de aparecer todas a la vez.
+        const lit = clamp01((1 - s.cal) * (count + 2) - i);
 
         // La marca bajo el índice se enciende; el resto se apaga con la
         // distancia. Sin esto las ocho pesan igual y no se sabe cuál se lee.
-        for (let i = 0; i < marks.current.length; i++) {
-          const el = marks.current[i];
-          if (!el) continue;
-          const d = Math.abs(i - p);
-          const o = 0.12 + 0.88 * clamp01(1 - d / 1.4);
+        const el = marks.current[i];
+        if (el) {
+          const o = (0.12 + 0.88 * clamp01(1 - d / 1.4)) * lit;
           el.setAttribute("stroke-opacity", o.toFixed(3));
           el.setAttribute("stroke-width", d < 0.5 ? "1.6" : "1");
         }
+
+        // El exponente grabado hace lo contrario cerca del índice: se apaga,
+        // porque ahí ya lo dice el rótulo grande y además lo cruza la línea
+        // del índice. Lejos también se apaga, para no llenar el canto.
+        const text = engraved.current[i];
+        if (text) {
+          const near = clamp01((d - 0.3) / 0.5);
+          const far = clamp01(1 - (d - 1) / 2.2);
+          text.setAttribute("fill-opacity", (0.6 * near * far * lit).toFixed(3));
+        }
+      }
+    };
+
+    useImperativeHandle(ref, () => ({
+      update(p, progress) {
+        const s = state.current;
+        const now = performance.now();
+
+        // Velocidad en fracción del recorrido por segundo. El primer frame no
+        // tiene anterior con qué comparar, y tras una pausa larga el cociente
+        // no significa nada, así que en los dos casos no cuenta.
+        const dt = (now - s.lastTime) / 1000;
+        if (!Number.isNaN(s.lastProgress) && dt > 0 && dt < 0.25) {
+          const speed = Math.abs(progress - s.lastProgress) / dt;
+          s.glow = Math.max(s.glow, clamp01(speed / FAST_SPEED));
+        }
+        s.lastProgress = progress;
+        s.lastTime = now;
+        s.p = p;
+        s.progress = progress;
+
+        // El brillo tiene que apagarse aunque el scroll ya no mande frames:
+        // mientras quede algo, un tick propio lo va bajando.
+        if (s.glow > 0 && !s.decaying) {
+          s.decaying = true;
+          const decay = () => {
+            s.glow *= GLOW_DECAY ** gsap.ticker.deltaRatio(60);
+            if (s.glow < 0.01) {
+              s.glow = 0;
+              s.decaying = false;
+              gsap.ticker.remove(decay);
+            }
+            render();
+          };
+          gsap.ticker.add(decay);
+        }
+
+        render();
       },
     }));
 
+    // La calibración: cuando el nombre termina de teclearse, el dial aparece,
+    // los anillos dan un barrido en sentidos opuestos y se asientan donde el
+    // scroll dice. Hasta entonces el dial no se ve — llega como consecuencia
+    // del nombre, no como decorado que ya estaba ahí.
+    useEffect(() => {
+      const s = state.current;
+      let tween: gsap.core.Tween | null = null;
+
+      const off = onIntroDone(() => {
+        gsap.to(shell.current, { opacity: 1, duration: 0.5, ease: "power1.out" });
+        tween = gsap.to(s, {
+          cal: 0,
+          duration: CAL_SECONDS,
+          ease: "power3.out",
+          onUpdate: render,
+        });
+      });
+
+      return () => {
+        off();
+        tween?.kill();
+      };
+    }, []);
+
     const current = levels[active] ?? levels[0];
+    const next = levels[active + 1];
 
     return (
-      <div className="pointer-events-none fixed inset-y-0 left-0 z-50 hidden items-center md:flex">
+      <div
+        ref={shell}
+        className="pointer-events-none fixed inset-y-0 left-0 z-50 hidden items-center md:flex"
+        // Invisible hasta la calibración.
+        style={{ opacity: 0 }}
+      >
         <svg
           viewBox="0 0 100 620"
           preserveAspectRatio="xMinYMid meet"
@@ -154,14 +289,11 @@ const ScaleHUD = forwardRef<DialHandle, { levels: Level[]; active: number }>(
             stroke="rgba(255,255,255,0.07)"
           />
 
-          <g ref={minor}>
+          {/* Color y grosor van en el grupo, no en cada línea: así encender
+              el anillo con la velocidad son dos writes y no 144. */}
+          <g ref={minor} stroke="#ffffff" strokeOpacity={MINOR_REST} strokeWidth="1">
             {MINOR_TICKS.map((deg) => (
-              <line
-                key={deg}
-                {...tick(MINOR_IN, MINOR_OUT, deg)}
-                stroke="rgba(255,255,255,0.30)"
-                strokeWidth="1"
-              />
+              <line key={deg} {...tick(MINOR_IN, MINOR_OUT, deg)} />
             ))}
           </g>
 
@@ -177,6 +309,32 @@ const ScaleHUD = forwardRef<DialHandle, { levels: Level[]; active: number }>(
                 strokeOpacity="0.12"
                 strokeWidth="1"
               />
+            ))}
+
+            {/* El exponente de cada nivel, grabado junto a su marca. Va dentro
+                del grupo que gira y se coloca con `rotate`, no con seno y
+                coseno: el atributo queda con enteros y servidor y cliente
+                escriben la misma cadena. Con esto el dial deja de ser siete
+                rayas anónimas y enseña el recorrido entero desde el inicio. */}
+            {levels.map((level, i) => (
+              <text
+                key={level.exp}
+                ref={(el) => {
+                  engraved.current[i] = el;
+                }}
+                x={CX + LABEL_R}
+                y={CY + 2.5}
+                transform={`rotate(${i * STEP} ${CX} ${CY})`}
+                fill="#ffffff"
+                fillOpacity="0"
+                fontSize="7.5"
+                className="font-mono"
+              >
+                10
+                <tspan dy="-3" fontSize="5.5">
+                  {level.exp}
+                </tspan>
+              </text>
             ))}
           </g>
 
@@ -208,6 +366,13 @@ const ScaleHUD = forwardRef<DialHandle, { levels: Level[]; active: number }>(
           <p className="mt-2 text-[0.6rem] leading-none tracking-[0.18em] whitespace-nowrap text-ash-300 uppercase">
             {UI.levelLabels[current.key]}
           </p>
+          {/* A dónde lleva el siguiente tramo. En el último nivel no hay. */}
+          {next && (
+            <p className="mt-3 flex items-center gap-1.5 text-[0.55rem] leading-none tracking-[0.18em] whitespace-nowrap text-ash-300/70 uppercase">
+              <span className="h-1 w-1 rotate-45 border border-ash-300/70" />
+              {UI.levelLabels[next.key]}
+            </p>
+          )}
         </div>
       </div>
     );

@@ -6,6 +6,7 @@ import ScaleHUD, { type DialHandle } from "@/components/ui/ScaleHUD";
 import NavMenu from "@/components/ui/NavMenu";
 import DepthDust, { type DustHandle } from "@/components/ui/DepthDust";
 import { subscribePointer } from "@/lib/pointer";
+import { onIntroDone } from "@/lib/intro";
 import { getLenis } from "@/lib/lenis";
 import { useContent } from "@/lib/i18n";
 import type { LevelKey } from "@/lib/content";
@@ -402,7 +403,25 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
         draw(lastP, lastDwell, lastLocalValue);
       });
 
+      // La onda de polvo sale del caret cuando el nombre termina de teclearse.
+      // Solo si de verdad se está viendo el primer nivel: al recargar a media
+      // página el nombre se teclea igual, fuera de cuadro, y una onda saliendo
+      // de un punto cualquiera no significaría nada.
+      const offIntro = onIntroDone(() => {
+        if (lastP > 0.25) return;
+        const caret = root.current?.querySelector("[data-zoom-origin]");
+        const stage = viewport.current;
+        if (!caret || !stage) return;
+        const c = caret.getBoundingClientRect();
+        const s = stage.getBoundingClientRect();
+        dust.current?.burst(
+          c.left + c.width / 2 - s.left,
+          c.top + c.height / 2 - s.top,
+        );
+      });
+
       return () => {
+        offIntro();
         unsubscribe();
         st.kill();
       };

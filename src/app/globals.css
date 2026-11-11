@@ -186,6 +186,31 @@ html.lenis body {
   .lit-breathe {
     animation: lit-breathe 4.2s ease-in-out infinite;
   }
+
+  /* El diamante de la indicación de scroll, cayendo por su línea. Anima
+     `translate` y no `transform`: el giro de 45° viene de la propiedad
+     `rotate` de Tailwind, y una `transform` se aplicaría dentro de ese giro
+     — el diamante caería en diagonal. */
+  .cue-drop {
+    animation: cue-drop 2.2s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+  }
+}
+
+@keyframes cue-drop {
+  0% {
+    translate: 0 -3px;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    translate: 0 37px;
+    opacity: 0;
+  }
 }
 
 @keyframes point-breathe {

@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { gsap } from "@/lib/gsap";
 
 /** Lo que `ZoomStage` entrega en cada frame. */
 export type DustFrame = {
@@ -20,7 +21,26 @@ export type DustFrame = {
 
 export type DustHandle = {
   update: (frame: DustFrame) => void;
+  /** Suelta una onda desde un punto del escenario, en px. */
+  burst: (x: number, y: number) => void;
 };
+
+/**
+ * Una onda en curso: un anillo que se abre desde `(x, y)`.
+ *
+ * Es lo único aquí que depende del tiempo y no del scroll, y a propósito: es
+ * un suceso —el nombre acaba de teclearse—, no un estado. No mueve el campo de
+ * sitio; solo enciende y empuja un poco las partículas por las que pasa, así
+ * que al terminar todo queda exactamente donde el scroll dice.
+ */
+type Wave = { x: number; y: number; t: number };
+
+/** Segundos que dura la onda y px por segundo a los que se abre. */
+const WAVE_SECONDS = 1.8;
+const WAVE_SPEED = 900;
+/** Grosor del anillo y cuánto empuja hacia afuera, en px. */
+const WAVE_WIDTH = 110;
+const WAVE_PUSH = 16;
 
 const COUNT = 340;
 /** Opacidad de la partícula más brillante, en pleno tránsito. */
@@ -65,7 +85,12 @@ const smoothstep = (n: number) => n * n * (3 - 2 * n);
 type Size = { w: number; h: number; dpr: number };
 
 /** Pinta un frame. Fuera del componente: no depende de nada del render. */
-function paint(el: HTMLCanvasElement | null, size: Size, frame: DustFrame) {
+function paint(
+  el: HTMLCanvasElement | null,
+  size: Size,
+  frame: DustFrame,
+  wave: Wave | null,
+) {
   const ctx = el?.getContext("2d");
   const { w, h, dpr } = size;
   if (!ctx || w === 0 || h === 0) return;
@@ -96,7 +121,7 @@ function paint(el: HTMLCanvasElement | null, size: Size, frame: DustFrame) {
     let alpha = q.a * win * win * intensity * fade * MAX_ALPHA;
     // Más allá del último nivel no hay nada: lo que vendría de fuera se apaga.
     if (d > 0) alpha *= 1 - e;
-    if (alpha < 0.01) continue;
+    if (alpha < 0.004) continue;
 
     const s = k ** d;
     // Misma proyección que las capas: escala alrededor del punto de fuga,
@@ -105,6 +130,20 @@ function paint(el: HTMLCanvasElement | null, size: Size, frame: DustFrame) {
     let py = cy + oy * (1 - s) + q.y * s * cy;
     px += (targetX - px) * pull;
     py += (targetY - py) * pull;
+
+    if (wave) {
+      const dx = px - wave.x;
+      const dy = py - wave.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const off = (dist - wave.t * WAVE_SPEED) / WAVE_WIDTH;
+      // Campana alrededor del frente, que además se va apagando con el tiempo.
+      const hit = Math.exp(-off * off) * (1 - wave.t / WAVE_SECONDS);
+      px += (dx / dist) * hit * WAVE_PUSH;
+      py += (dy / dist) * hit * WAVE_PUSH;
+      alpha = Math.min(1, alpha * (1 + 3.5 * hit));
+    }
+
+    if (alpha < 0.01) continue;
     if (px < -4 || px > w + 4 || py < -4 || py > h + 4) continue;
 
     const r = q.r * Math.min(1.8, Math.max(0.55, Math.sqrt(s)));
@@ -135,11 +174,35 @@ const DepthDust = forwardRef<DustHandle>(function DepthDust(_, ref) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const last = useRef<DustFrame | null>(null);
   const size = useRef<Size>({ w: 0, h: 0, dpr: 1 });
+  const wave = useRef<Wave | null>(null);
+  const stopWave = useRef<(() => void) | null>(null);
 
   useImperativeHandle(ref, () => ({
     update(frame) {
       last.current = frame;
-      paint(canvas.current, size.current, frame);
+      paint(canvas.current, size.current, frame, wave.current);
+    },
+    burst(x, y) {
+      stopWave.current?.();
+      const state: Wave = { x, y, t: 0 };
+      wave.current = state;
+
+      // Mientras dura, se repinta el último frame en cada tick: el scroll
+      // puede estar quieto y la onda tiene que avanzar igual.
+      const tick = (_time: number, deltaMs: number) => {
+        state.t += deltaMs / 1000;
+        if (state.t >= WAVE_SECONDS) stop();
+        if (last.current) {
+          paint(canvas.current, size.current, last.current, wave.current);
+        }
+      };
+      const stop = () => {
+        gsap.ticker.remove(tick);
+        wave.current = null;
+        stopWave.current = null;
+      };
+      stopWave.current = stop;
+      gsap.ticker.add(tick);
     },
   }));
 
@@ -155,13 +218,16 @@ const DepthDust = forwardRef<DustHandle>(function DepthDust(_, ref) {
       el.width = Math.round(w * dpr);
       el.height = Math.round(h * dpr);
       // Cambiar el tamaño borra el canvas: se repinta el último frame.
-      if (last.current) paint(el, size.current, last.current);
+      if (last.current) paint(el, size.current, last.current, wave.current);
     };
 
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      stopWave.current?.();
+    };
   }, []);
 
   return (
