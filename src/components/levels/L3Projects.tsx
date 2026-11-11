@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useContent } from "@/lib/i18n";
 import type { Content } from "@/lib/content";
 import { useTilt } from "@/lib/tilt";
+import ProjectPanel, { type Origin } from "@/components/ui/ProjectPanel";
 
 /**
  * Proyectos — pista horizontal.
@@ -25,6 +26,12 @@ export default function L3Projects() {
   const track = useRef<HTMLDivElement>(null);
 
   useTilt(track);
+
+  // Qué proyecto tiene abierta la vista detallada y desde qué rectángulo
+  // creció. Se guarda el nombre y no el objeto: si cambia el idioma con el
+  // panel abierto, el contenido se vuelve a buscar en el idioma nuevo.
+  const [open, setOpen] = useState<{ name: string; origin: Origin } | null>(null);
+  const opened = open ? PROJECTS.find((p) => p.name === open.name) : undefined;
 
   useEffect(() => {
     const v = viewport.current;
@@ -84,7 +91,12 @@ export default function L3Projects() {
           }}
         >
           {PROJECTS.map((p, i) => (
-            <ProjectCard key={p.name} project={p} index={i} />
+            <ProjectCard
+              key={p.name}
+              project={p}
+              index={i}
+              onOpen={(origin) => setOpen({ name: p.name, origin })}
+            />
           ))}
         </div>
       </div>
@@ -98,6 +110,14 @@ export default function L3Projects() {
           style={{ transform: "scaleX(var(--local, 0))" }}
         />
       </div>
+
+      {open && opened && (
+        <ProjectPanel
+          project={opened}
+          origin={open.origin}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </div>
   );
 }
@@ -105,9 +125,12 @@ export default function L3Projects() {
 function ProjectCard({
   project,
   index,
+  onOpen,
 }: {
   project: Content["PROJECTS"][number];
   index: number;
+  /** Abre la vista detallada; recibe el rectángulo de la tarjeta en pantalla. */
+  onOpen: (origin: Origin) => void;
 }) {
   const { UI } = useContent();
 
@@ -127,7 +150,15 @@ function ProjectCard({
     >
     <article
       data-tilt
-      className="tilt relative flex w-full flex-col border border-white/12 bg-black p-6 transition-colors duration-500 hover:border-white/30"
+      // Toda la tarjeta abre el detalle, salvo el enlace al sitio, que va a
+      // donde dice. El botón de abajo es el mismo gesto con teclado: su clic
+      // sube hasta aquí.
+      onClick={(e) => {
+        if ((e.target as Element).closest("a")) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        onOpen({ left: r.left, top: r.top, width: r.width, height: r.height });
+      }}
+      className="tilt relative flex w-full cursor-pointer flex-col border border-white/12 bg-black p-6 transition-colors duration-500 hover:border-white/30"
     >
       <h3 className="font-mono text-base text-white">{project.name}</h3>
 
@@ -151,22 +182,21 @@ function ProjectCard({
         {project.detail}
       </p>
 
-      {/* Capa técnica opcional: la prosa de arriba se queda general a
-          propósito, esto es para quien sí quiere el nivel de ingeniería.
-          `<details>` nativo — sin JS a la medida, abre/cierra por sí solo. */}
-      <details className="group mt-4 border-t border-white/10 pt-3">
-        <summary className="cursor-pointer font-mono text-[0.6rem] tracking-widest text-ash-400 uppercase transition-colors hover:text-white [&::-webkit-details-marker]:hidden">
-          <span className="mr-1.5 inline-block transition-transform group-open:rotate-90">
-            ▸
-          </span>
-          {UI.seeTechnical}
-        </summary>
-        <p className="mt-3 text-xs leading-relaxed text-ash-300">{project.technical}</p>
-      </details>
-
       <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-ash-400">
         {project.stack.join(" · ")}
       </p>
+
+      {/* La entrada a la vista detallada. El detalle técnico vivía aquí en un
+          `<details>`, que hacía crecer la tarjeta dentro de la pista; ahora es
+          una sección del panel. */}
+      <button
+        type="button"
+        className="mt-5 flex items-center gap-2 self-start font-mono text-[0.6rem] tracking-widest text-ash-200 uppercase transition-colors hover:text-white"
+      >
+        <span className="h-1 w-1 rotate-45 border border-white/70" aria-hidden />
+        {UI.seeDetail}
+        <span aria-hidden>→</span>
+      </button>
 
       {/* El enlace muestra el dominio, no una flecha suelta.
           Una ↗ de nueve pixeles en una esquina no se lee como "esto está en

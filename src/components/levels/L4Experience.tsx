@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useContent } from "@/lib/i18n";
 import { useTilt } from "@/lib/tilt";
+import { zoomTo } from "@/lib/zoom-nav";
+import RolePanel, { ROLE_PANEL_WIDTH } from "@/components/ui/RolePanel";
 
 /** Ancho de una tarjeta. */
 const CARD = 360;
@@ -36,11 +38,41 @@ const CARD_H = 225;
  * es todo lo que hay que entender para leer el nivel.
  */
 export default function L4Experience() {
-  const { EXPERIENCE, UI } = useContent();
+  const { EXPERIENCE, PROJECTS, UI } = useContent();
   const viewport = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
 
   useTilt(track);
+
+  /**
+   * El puesto con la ficha abierta.
+   *
+   * `shift` es cuánto se corre la pista para que su tarjeta quede centrada en
+   * el espacio que la ficha deja libre, en vez de quedar tapada o descentrada.
+   * `leaving` separa "se está cerrando" de "ya se desmontó": la pista vuelve a
+   * su sitio y las demás tarjetas se encienden en cuanto la ficha empieza a
+   * irse, no cuando termina.
+   */
+  const [open, setOpen] = useState<{ org: string; shift: number } | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const focused = open && !leaving ? open : null;
+  const opened = open ? EXPERIENCE.find((r) => r.org === open.org) : undefined;
+
+  const openRole = (org: string, card: HTMLElement) => {
+    const v = viewport.current;
+    const r = card.getBoundingClientRect();
+    const free = (v?.clientWidth ?? 0) - ROLE_PANEL_WIDTH;
+    // En pantallas donde la ficha ocupa casi todo no hay dónde centrar nada.
+    const shift = free >= CARD + 40 ? free / 2 - (r.left + r.width / 2) : 0;
+    setLeaving(false);
+    setOpen({ org, shift });
+  };
+
+  const goToProject = (name: string) => {
+    const index = PROJECTS.findIndex((p) => p.name === name);
+    if (index < 0) return;
+    zoomTo("projects", PROJECTS.length > 1 ? index / (PROJECTS.length - 1) : 0);
+  };
 
   // La línea corre del más antiguo al más reciente. `EXPERIENCE` está en
   // orden inverso, que es como se lee un CV y como lo sirve la capa
@@ -96,6 +128,13 @@ export default function L4Experience() {
       </div>
 
       <div ref={viewport} className="overflow-hidden">
+        {/* El corrimiento de la ficha va en su propia capa: la pista ya usa su
+            `transform` para el recorrido con `--local`, y las dos no caben en
+            un mismo elemento. */}
+        <div
+          className="transition-transform duration-700 ease-out-expo"
+          style={{ transform: `translate3d(${focused?.shift ?? 0}px, 0, 0)` }}
+        >
         <div
           ref={track}
           className="relative"
@@ -124,8 +163,15 @@ export default function L4Experience() {
             // borde superior de una fila.
             const above = i % 2 === 0;
 
+            const dimmed = focused !== null && focused.org !== role.org;
+            const selected = focused?.org === role.org;
+
             return (
-              <div key={role.org}>
+              <div
+                key={role.org}
+                className="transition-opacity duration-500"
+                style={{ opacity: dimmed ? 0.22 : 1 }}
+              >
                 <span
                   className="absolute w-px bg-white/30"
                   style={{
@@ -135,14 +181,26 @@ export default function L4Experience() {
                   }}
                 />
 
+                {/* El nodo del puesto abierto crece y brilla más: es lo que
+                    une la tarjeta con la ficha, que repite este mismo nodo. */}
                 <span
-                  className="absolute h-2 w-2 rotate-45 bg-white shadow-[0_0_12px_rgba(255,255,255,0.7)]"
+                  className={`absolute h-2 w-2 rotate-45 bg-white transition-[scale,box-shadow] duration-500 ${
+                    selected
+                      ? "scale-150 shadow-[0_0_22px_rgba(255,255,255,1)]"
+                      : "shadow-[0_0_12px_rgba(255,255,255,0.7)]"
+                  }`}
                   style={{ left: x - 4, top: midY - 4 }}
                 />
 
                 <article
                   data-tilt
-                  className="tilt absolute border border-white/15 bg-black p-5 transition-colors duration-500 hover:border-white/35"
+                  // Toda la tarjeta abre la ficha, salvo los enlaces a
+                  // proyectos (`data-stop`), que llevan a otro nivel.
+                  onClick={(e) => {
+                    if ((e.target as Element).closest("[data-stop], a")) return;
+                    openRole(role.org, e.currentTarget);
+                  }}
+                  className="tilt absolute cursor-pointer border border-white/15 bg-black p-5 transition-colors duration-500 hover:border-white/35"
                   style={{
                     left: x - CARD / 2,
                     width: CARD,
@@ -155,9 +213,21 @@ export default function L4Experience() {
                     minHeight: CARD_H,
                   }}
                 >
-                  <p className="font-mono text-[0.6rem] tracking-[0.18em] text-ash-300 uppercase tabular-nums">
-                    {role.period}
-                  </p>
+                  {/* La entrada a la ficha va en el renglón del periodo y no
+                      abajo: la pista tiene la altura justa y un renglón más
+                      empujaría las tarjetas largas fuera de ella. */}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="font-mono text-[0.6rem] tracking-[0.18em] text-ash-300 uppercase tabular-nums">
+                      {role.period}
+                    </p>
+                    <button
+                      type="button"
+                      className="flex shrink-0 items-center gap-1.5 font-mono text-[0.55rem] tracking-widest text-ash-200 uppercase transition-colors hover:text-white"
+                    >
+                      {UI.seeDetail}
+                      <span aria-hidden>→</span>
+                    </button>
+                  </div>
                   <h3 className="mt-2 text-base text-white">{role.org}</h3>
                   <p className="mt-0.5 font-mono text-[0.65rem] tracking-[0.12em] text-ash-200 uppercase">
                     {role.title}
@@ -165,6 +235,30 @@ export default function L4Experience() {
                   <p className="mt-3 text-xs leading-relaxed text-ash-200">
                     {role.detail}
                   </p>
+                  {/* Lo que salió de este puesto, enlazado a su tarjeta en
+                      proyectos: el zoom vuelve a ese nivel y la pista se
+                      detiene con esa tarjeta al centro. */}
+                  {role.projects.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                      <span className="font-mono text-[0.55rem] tracking-[0.18em] text-ash-300 uppercase">
+                        {UI.relatedProjects}
+                      </span>
+                      {role.projects.map((name) => {
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            data-stop
+                            onClick={() => goToProject(name)}
+                            className="flex items-center gap-1.5 border-b border-white/25 pb-px font-mono text-[0.6rem] text-ash-100 transition-colors hover:border-white hover:text-white"
+                          >
+                            {name}
+                            <span aria-hidden>↗</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                   <p className="mt-3 font-mono text-[0.55rem] leading-relaxed text-ash-400">
                     {role.stack.join(" · ")}
                   </p>
@@ -174,6 +268,7 @@ export default function L4Experience() {
           })}
           </div>
         </div>
+        </div>
       </div>
 
       <div className="mx-8 mt-6 h-px bg-white/10 md:mx-16">
@@ -182,6 +277,25 @@ export default function L4Experience() {
           style={{ transform: "scaleX(var(--local, 0))" }}
         />
       </div>
+
+      {open && opened && (
+        <RolePanel
+          role={opened}
+          onClosing={() => setLeaving(true)}
+          onClose={() => {
+            setOpen(null);
+            setLeaving(false);
+          }}
+          onProject={(name) => {
+            // Sin animación de salida: se desmonta ya, porque el scroll está
+            // detenido mientras la ficha existe y el salto lo necesita libre.
+            // El salto espera un instante a que el desmontaje lo libere.
+            setOpen(null);
+            setLeaving(false);
+            window.setTimeout(() => goToProject(name), 60);
+          }}
+        />
+      )}
     </div>
   );
 }

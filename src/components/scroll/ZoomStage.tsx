@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import ScaleHUD, { type DialHandle } from "@/components/ui/ScaleHUD";
 import NavMenu from "@/components/ui/NavMenu";
 import DepthDust, { type DustHandle } from "@/components/ui/DepthDust";
 import { subscribePointer } from "@/lib/pointer";
 import { onIntroDone } from "@/lib/intro";
+import { setZoomNav } from "@/lib/zoom-nav";
 import { getLenis } from "@/lib/lenis";
 import { useContent } from "@/lib/i18n";
 import type { LevelKey } from "@/lib/content";
@@ -170,12 +171,15 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
    * `ScrollTrigger.update` → `apply()` — el zoom pasa visiblemente por cada
    * nivel intermedio, igual que con scroll orgánico, sin tocar `draw()`.
    */
-  const scrollToLevel = (i: number) => {
+  const scrollToLevel = (i: number, local = 0) => {
     const lenis = getLenis();
     const r = root.current;
     if (!lenis || !r || total === 0) return;
 
-    const progress = levelStart(levels, i) / total;
+    // `local` avanza dentro de la estancia del nivel: es lo que deja caer en
+    // una tarjeta concreta de una pista y no siempre en la primera.
+    const within = clamp01(local) * (levels[i].dwell ?? 0);
+    const progress = (levelStart(levels, i) + within) / total;
     const y = r.offsetTop + progress * (r.offsetHeight - window.innerHeight);
 
     // Más lejos, más tiempo — para que el paso por los niveles intermedios
@@ -190,6 +194,19 @@ export default function ZoomStage({ levels }: { levels: Level[] }) {
   const scrollToSection = (i: number) => {
     document.getElementById(`level-${levels[i].key}`)?.scrollIntoView({ behavior: "auto" });
   };
+
+  // Publica el salto para `zoomTo` (ver `lib/zoom-nav.ts`). Sin dependencias a
+  // propósito: las dos funciones se recrean en cada render y cierran sobre
+  // `active` y `reduced`, así que se registra siempre la vigente.
+  useEffect(() => {
+    setZoomNav((key, local) => {
+      const i = levels.findIndex((level) => level.key === key);
+      if (i < 0) return;
+      if (reduced) scrollToSection(i);
+      else scrollToLevel(i, local);
+    });
+    return () => setZoomNav(null);
+  });
 
   useGSAP(
     () => {

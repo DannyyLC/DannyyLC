@@ -79,6 +79,28 @@ export default function SemanticOutline() {
           <p>{p.client}</p>
           <p>{p.role}</p>
           <p>{p.detail}</p>
+          {/* Las secciones de la vista detallada (`ProjectPanel`), que vive
+              en un diálogo fuera de este árbol. */}
+          {p.problem && (
+            <p>
+              <strong>{UI.panel.problem}:</strong> {p.problem}
+            </p>
+          )}
+          {p.built && (
+            <p>
+              <strong>{UI.panel.built}:</strong> {p.built}
+            </p>
+          )}
+          {p.decisions && (
+            <p>
+              <strong>{UI.panel.decisions}:</strong> {p.decisions}
+            </p>
+          )}
+          {p.result && (
+            <p>
+              <strong>{UI.panel.result}:</strong> {p.result}
+            </p>
+          )}
           <p>{p.technical}</p>
           <p>{p.stack.join(", ")}</p>
         </section>
@@ -90,8 +112,31 @@ export default function SemanticOutline() {
           <h3>
             {role.title} — {role.org}
           </h3>
-          <p>{role.period}</p>
+          <p>
+            {role.period} · {role.ongoing ? UI.role.ongoing : UI.role.completed}
+          </p>
           <p>{role.detail}</p>
+          {/* Las secciones de la ficha del puesto (`RolePanel`). */}
+          {role.assignment && (
+            <p>
+              <strong>{UI.role.assignment}:</strong> {role.assignment}
+            </p>
+          )}
+          {role.delivered && (
+            <p>
+              <strong>{UI.role.delivered}:</strong> {role.delivered}
+            </p>
+          )}
+          {role.result && (
+            <p>
+              <strong>{UI.role.result}:</strong> {role.result}
+            </p>
+          )}
+          {role.projects.length > 0 && (
+            <p>
+              <strong>{UI.relatedProjects}:</strong> {role.projects.join(", ")}
+            </p>
+          )}
           <p>{role.stack.join(", ")}</p>
         </section>
       ))}

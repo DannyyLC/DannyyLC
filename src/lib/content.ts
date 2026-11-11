@@ -361,15 +361,33 @@ const PROJECTS_BASE: readonly {
 ];
 
 /**
- * `detail` es la prosa que se lee de entrada: qué hace el proyecto y por qué
- * importó, sin inventario técnico — para eso ya están los chips de `stack`.
- * `technical` es la capa opcional que se revela con "ver más" (`<details>` en
- * `L3Projects`), para quien sí quiere el nivel de ingeniería.
+ * `detail` es la prosa que se lee de entrada, en la tarjeta: qué hace el
+ * proyecto y por qué importó, sin inventario técnico — para eso ya están los
+ * chips de `stack`.
+ *
+ * Lo demás es la vista detallada (`ProjectPanel`), con una estructura fija:
+ * problema → lo que construí → lo que decidí → resultado → detalle técnico.
+ * Todas las secciones menos `technical` son opcionales y el panel solo dibuja
+ * las que existen. **Una sección sin respaldo se deja fuera, no se rellena**:
+ * lo que hay ahora es lo que ya afirmaban `detail` y `technical`, repartido;
+ * las que faltan son las que todavía no tienen nada verificable que decir.
+ *
+ * `metrics` son cifras sueltas que el panel muestra en grande. Solo cifras que
+ * ya estén sostenidas en la prosa.
  */
-const PROJECT_TEXT: Record<
-  Lang,
-  Record<ProjectName, { what: string; role: string; detail: string; technical: string }>
-> = {
+type ProjectText = {
+  what: string;
+  role: string;
+  detail: string;
+  technical: string;
+  problem?: string;
+  built?: string;
+  decisions?: string;
+  result?: string;
+  metrics?: readonly { value: string; label: string }[];
+};
+
+const PROJECT_TEXT: Record<Lang, Record<ProjectName, ProjectText>> = {
   en: {
     Tesseract: {
       what: "AI agent platform",
@@ -378,6 +396,9 @@ const PROJECT_TEXT: Record<
         "A platform for building and running AI agents in production. I designed it and built it from scratch, and today real clients use it.",
       technical:
         "Next.js on the front end, NestJS and PostgreSQL behind it, everything containerized with Docker. I designed the agent model and the orchestration layer that lets several run in production at once.",
+      built:
+        "A platform for building and running AI agents in production. I designed the agent model and the orchestration layer that lets several run at once, and built it from scratch.",
+      result: "It is live, and real clients use it today.",
     },
     "Agent-based RAG": {
       what: "Research · MP-80-25",
@@ -386,6 +407,16 @@ const PROJECT_TEXT: Record<
         "A research project at the UAA to get an AI to look up information on its own and give better answers. I benchmarked it against several open-source models: 8.9% better accuracy across 252 standardized questions.",
       technical:
         "Multi-agent retrieval on LangGraph and LangChain, with Qdrant as the vector store. Each agent has a distinct role inside the retrieval pipeline.",
+      problem:
+        "Getting an AI to look up information on its own, so that it gives better answers.",
+      built:
+        "The retrieval system: several agents, each with a distinct role inside the retrieval pipeline.",
+      result:
+        "Benchmarked against several open-source models: 8.9% better accuracy across 252 standardized questions.",
+      metrics: [
+        { value: "8.9%", label: "better accuracy" },
+        { value: "252", label: "standardized questions" },
+      ],
     },
     Axis: {
       what: "Multi-tenant inventory",
@@ -394,6 +425,10 @@ const PROJECT_TEXT: Record<
         "An inventory system where every client builds their own fields, instead of the software forcing a fixed structure on them. I decided how it splits across clients and how it ships: cloud-hosted, on their own servers, or fully offline.",
       technical:
         "React and TanStack on the front end, multi-tenant architecture on Nx and Prisma, with Expo for the mobile app and PostgreSQL underneath — a per-client dynamic schema without losing efficient queries.",
+      problem: "Inventory software that forces a fixed structure on the client.",
+      built: "An inventory system where every client builds their own fields.",
+      decisions:
+        "How it splits across clients, and how it ships: cloud-hosted, on the client's own servers, or fully offline.",
     },
     "Fractal Hub": {
       what: "Public surface",
@@ -401,6 +436,8 @@ const PROJECT_TEXT: Record<
       detail:
         "Fractal's public site and the Tesseract landing page, in one repository, so marketing ships without touching the product.",
       technical: "A Turborepo with Next.js, GSAP for animation, and Three.js for the 3D pieces.",
+      problem: "Marketing has to ship without touching the product.",
+      built: "Fractal's public site and the Tesseract landing page, in one repository.",
     },
   },
   es: {
@@ -411,6 +448,9 @@ const PROJECT_TEXT: Record<
         "Una plataforma para construir y correr agentes de IA en producción. La diseñé y la construí de cero, y hoy la usan clientes reales.",
       technical:
         "Next.js en el frontend, NestJS y PostgreSQL detrás, todo en Docker. Diseñé el modelo de agentes y la capa que permite correr varios en producción a la vez.",
+      built:
+        "Una plataforma para construir y correr agentes de IA en producción. Diseñé el modelo de agentes y la capa que permite correr varios a la vez, y la construí de cero.",
+      result: "Está en línea y hoy la usan clientes reales.",
     },
     "Agent-based RAG": {
       what: "Investigación · MP-80-25",
@@ -419,6 +459,16 @@ const PROJECT_TEXT: Record<
         "Un proyecto de investigación en la UAA para que una IA busque información por su cuenta y dé mejores respuestas. Lo evalué contra varios modelos de código abierto: 8.9% más precisión sobre 252 preguntas estandarizadas.",
       technical:
         "Recuperación multiagente sobre LangGraph y LangChain, con Qdrant como base vectorial. Cada agente tiene un rol distinto dentro del pipeline de recuperación.",
+      problem:
+        "Que una IA busque información por su cuenta y, con eso, dé mejores respuestas.",
+      built:
+        "El sistema de recuperación: varios agentes, cada uno con un rol distinto dentro del pipeline.",
+      result:
+        "Evaluado contra varios modelos de código abierto: 8.9% más precisión sobre 252 preguntas estandarizadas.",
+      metrics: [
+        { value: "8.9%", label: "más precisión" },
+        { value: "252", label: "preguntas estandarizadas" },
+      ],
     },
     Axis: {
       what: "Inventario multi-tenant",
@@ -427,6 +477,10 @@ const PROJECT_TEXT: Record<
         "Un sistema de inventario donde cada cliente arma sus propios campos, en vez de que el software le imponga una estructura fija. Decidí cómo se reparte entre clientes y cómo se entrega: en la nube, en sus propios servidores, o sin conexión.",
       technical:
         "React y TanStack en el frontend, arquitectura multi-tenant sobre Nx y Prisma, con Expo para la app móvil y PostgreSQL de base — esquema dinámico por cliente sin perder consultas eficientes.",
+      problem: "El software de inventario que le impone al cliente una estructura fija.",
+      built: "Un sistema de inventario donde cada cliente arma sus propios campos.",
+      decisions:
+        "Cómo se reparte entre clientes y cómo se entrega: en la nube, en los servidores del cliente, o sin conexión.",
     },
     "Fractal Hub": {
       what: "Superficie pública",
@@ -434,6 +488,8 @@ const PROJECT_TEXT: Record<
       detail:
         "El sitio público de Fractal y la página de Tesseract, en un solo repositorio, para que el marketing se actualice sin tocar el producto.",
       technical: "Un monorepo con Turborepo, Next.js, GSAP para animación y Three.js para los elementos 3D.",
+      problem: "Que el marketing se pueda actualizar sin tocar el producto.",
+      built: "El sitio público de Fractal y la página de Tesseract, en un solo repositorio.",
     },
   },
 };
@@ -465,12 +521,19 @@ const EXPERIENCE_BASE: readonly {
   /** Fin, `YYYY-MM`, o `null` si sigue en curso. */
   to: string | null;
   stack: readonly string[];
+  /**
+   * Proyectos de `PROJECTS` que salieron de este puesto. La tarjeta los
+   * enlaza: responde el "¿y qué hiciste ahí?" que la línea de tiempo deja
+   * abierto. Solo van los que tienen ese puesto como `client`.
+   */
+  projects?: readonly ProjectName[];
 }[] = [
   {
     org: "Fractal",
     from: "2025-01",
     to: null,
     stack: ["Next.js", "NestJS", "PostgreSQL", "GCP", "Docker"],
+    projects: ["Tesseract", "Axis", "Fractal Hub"],
   },
   {
     org: "SoftwareSV",
@@ -509,7 +572,21 @@ const EXPERIENCE_BASE: readonly {
   },
 ];
 
-const EXPERIENCE_TEXT: Record<Lang, Record<Org, { title: string; detail: string }>> = {
+/**
+ * `detail` es la frase de la tarjeta. `assignment`, `delivered` y `result` son
+ * las secciones de la ficha del puesto (`RolePanel`): qué me encargaron, qué
+ * entregué, qué resultó. Son opcionales y la ficha solo dibuja las que existen
+ * — misma regla que en proyectos: sin respaldo, se queda fuera.
+ */
+type RoleText = {
+  title: string;
+  detail: string;
+  assignment?: string;
+  delivered?: string;
+  result?: string;
+};
+
+const EXPERIENCE_TEXT: Record<Lang, Record<Org, RoleText>> = {
   en: {
     Fractal: {
       title: "Co-founder & CEO",
@@ -672,8 +749,24 @@ const UI_TEXT: Record<
     since: string;
     softSkillsLabel: string;
     certificationsLabel: string;
-    /** Texto del `<summary>` que expande el detalle técnico de un proyecto. */
+    /** Rótulo de la sección técnica en la vista detallada de un proyecto. */
     seeTechnical: string;
+    /** Botón de la tarjeta que abre la vista detallada. */
+    seeDetail: string;
+    /** Botón que cierra la vista detallada. */
+    close: string;
+    /** Rótulos de las secciones de la vista detallada. */
+    panel: { problem: string; built: string; decisions: string; result: string };
+    /** Rótulo de los proyectos enlazados desde un puesto. */
+    relatedProjects: string;
+    /** Estado de un puesto y rótulos de las secciones de su ficha. */
+    role: {
+      ongoing: string;
+      completed: string;
+      assignment: string;
+      delivered: string;
+      result: string;
+    };
     /** `aria-label` del `<nav>` que envuelve el menú de secciones. */
     navLabel: string;
     /** `aria-label` del botón que abre/cierra el menú — el texto visible es el nivel activo. */
@@ -704,6 +797,22 @@ const UI_TEXT: Record<
     softSkillsLabel: "Soft skills",
     certificationsLabel: "Certifications",
     seeTechnical: "Technical detail",
+    seeDetail: "View detail",
+    close: "Close",
+    panel: {
+      problem: "The problem",
+      built: "What I built",
+      decisions: "What I decided",
+      result: "Result",
+    },
+    relatedProjects: "Built here",
+    role: {
+      ongoing: "Ongoing",
+      completed: "Completed",
+      assignment: "The assignment",
+      delivered: "What I delivered",
+      result: "Result",
+    },
     navLabel: "Section navigation",
     navToggle: "Open section menu",
     semantic: {
@@ -731,6 +840,22 @@ const UI_TEXT: Record<
     softSkillsLabel: "Habilidades blandas",
     certificationsLabel: "Certificaciones",
     seeTechnical: "Detalle técnico",
+    seeDetail: "Ver detalle",
+    close: "Cerrar",
+    panel: {
+      problem: "El problema",
+      built: "Lo que construí",
+      decisions: "Lo que decidí",
+      result: "Resultado",
+    },
+    relatedProjects: "Construido aquí",
+    role: {
+      ongoing: "En curso",
+      completed: "Concluido",
+      assignment: "El encargo",
+      delivered: "Lo que entregué",
+      result: "Resultado",
+    },
     navLabel: "Navegación de secciones",
     navToggle: "Abrir menú de secciones",
     semantic: {
@@ -772,6 +897,9 @@ export function getContent(lang: Lang) {
     PROJECTS: PROJECTS_BASE.map((p) => ({ ...p, ...PROJECT_TEXT[lang][p.name] })),
     EXPERIENCE: EXPERIENCE_BASE.map((r) => ({
       ...r,
+      projects: r.projects ?? [],
+      /** Sigue en curso. Sale de los datos, no de la fecha de hoy. */
+      ongoing: r.to === null,
       ...EXPERIENCE_TEXT[lang][r.org],
       period: formatPeriod(r.from, r.to, lang),
     })),
